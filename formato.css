@@ -1,0 +1,208 @@
+@charset "utf-8";
+/* CSS Document */
+html, body{
+	margin:0; 
+	padding:0; 
+	width:100%; 
+	height:100%; 
+	overflow:hidden;
+	color:#CCC;
+}
+
+#background{
+	position:absolute; 
+	z-index:1; 
+	width:100%; 
+	height:100%;
+	top:0;
+	left:0;
+	background-image:url(imagenes/MyancientshipOrion_2.JPG)
+}
+
+a:link{
+	text-decoration:none;
+	color:#0F0;
+}
+
+a:visited{
+	text-decoration:none;
+	color:#3FC
+}
+
+a:link{
+	text-decoration:none;
+	color:#0F0;
+}
+
+#fondo{
+	width:100%; 
+	height:100%;
+	
+}
+
+#contenedor{
+	text-align:left;
+	width:90%;
+	margin:auto;
+	margin-bottom:25px;
+}
+
+#recursos{
+	width:auto;
+	height:30px;
+	background-color:#006;
+	border:#333 2px solid;
+	text-align:center;
+	
+}
+
+#lateral{
+	text-align:center;
+	width:20%;
+	background-color:#006;
+	float:left;
+	border:#333 2px solid;
+	margin-bottom:25px;
+}
+
+#planeta{
+	text-align:center;
+	width:20%;
+	background-color:#006;
+	border:#333 2px solid;
+	margin-top:25px;
+}
+
+#principal{
+	margin-left:22%;
+	margin-bottom:15px;
+	background-color:#006;
+	border:#333 2px solid;
+}
+#investigacion{
+	margin:5px;
+	width:80%;
+	height:auto;
+	padding:5px;
+	border:#333 2px solid;
+}
+
+#trop{
+	margin:5px;
+	border:#333 2px solid;
+	height:auto;
+	padding:5px;
+	width:95%;
+	text-align:left;
+	overflow:auto;
+}
+
+#generales{
+	width:100%;
+	height:auto;
+	display:block;
+}
+
+#tropas{
+	width:100%;
+	height:auto;
+	display:none;
+}
+
+#naves{
+	width:100%;
+	height:auto;
+	display:none;
+}
+
+#defensas{
+	width:100%;
+	height:auto;
+	display:none;
+}
+
+#actuales{
+	width:100%;
+	height:auto;
+	display:block;
+}
+
+#nuevas{
+	width:100%;
+	height:auto;
+	display:none;
+}
+
+#requisitos{
+	width:100%;
+	height:auto;
+	display:none;
+}
+#requcumplido{
+	width:300px;
+	margin:5px;
+	background-color:#0F0;
+	text-align:center;
+	color:#000;
+}
+
+#requnocumplido{
+	width:300px;
+	margin:5px;
+	background-color:#F00;
+	text-align:center;
+}
+
+listamensaje{
+	width:100%;
+	height:auto;
+	display:block;
+}
+
+#nuevomensaje{
+	width:100%;
+	height:auto;
+	display:none;
+}
+
+#cambio{
+	margin:5px;
+	border:#333 2px solid;
+	height:auto;
+	padding:5px;
+	width:95%;
+	text-align:center;	
+}
+#botonmejora{
+	margin:5px;
+	width:auto;
+	height:100%;
+	border:#333 2px solid;
+	float:right;
+	text-align:center;
+}
+
+#anunciorob{
+	margin-left:61%;
+	margin-bottom:1%;
+	width:300px;
+	height:250px;
+	
+}
+
+#anuncioban{
+	margin-top:2%;
+	width:728px;
+	height:90px;	
+}
+
+#pie{
+	text-align:center;
+	width:auto;
+	height:auto;
+	background-color:#006;
+	border:#333 2px solid;
+	clear:left;
+	margin:auto;
+	margin-top:25px;
+}
