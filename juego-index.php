@@ -145,12 +145,18 @@ if($_SESSION["nick"] == $jugador_dat["nick"] && $_SESSION["codigoseguridad"] == 
 	
 	//comprueba si se han enviado mensajes
 	if (isset($_POST["enviar_mensaje"])){
-		$remitente = htmlentities($_POST["remitente"]);
-		$destinatario = htmlentities($_POST["destinatario"]);
-		$hora = htmlentities($_POST["hora"]);
-		$asunto = htmlentities($_POST["asunto"]);
-		$cuerpo = htmlentities($_POST["cuerpo"]);
-		mysql_query('INSERT INTO mensajes (de, para, hora, asunto, mensaje) VALUES (\''.$remitente.'\', \''.$destinatario.'\',\''.$hora.'\',\''.$asunto.'\',\''.$cuerpo.'\')') or die(mysql_error());
+		if($_POST["remitente"] != "" && $_POST["destinatario"] != "" && $_POST["cuerpo"] != "" && $_POST["hora"] != ""){
+			$remitente = htmlentities($_POST["remitente"]);
+			$destinatario = htmlentities($_POST["destinatario"]);
+			$hora = htmlentities($_POST["hora"]);
+			if($_POST["asunto"] == ""){
+				$asunto = "Sin asunto";
+			}else{
+				$asunto = htmlentities($_POST["asunto"]);
+			}
+			$cuerpo = htmlentities($_POST["cuerpo"]);
+			mysql_query('INSERT INTO mensajes (de, para, hora, asunto, mensaje) VALUES (\''.$remitente.'\', \''.$destinatario.'\',\''.$hora.'\',\''.$asunto.'\',\''.$cuerpo.'\')') or die(mysql_error());
+		}
 	}
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -231,7 +237,7 @@ if($_GET["control"] == "salir"){
 if($_GET["control"] == "inicio" || $_GET["control"] == ""){
 	?>
 	<div id="principal">
-<p>Juego en fase pre-Alpha, aún no está ni de lejos listo para ser jugado, pero quiero ir haciendo pruebas para probar lo que tengo hecho, si todo va bien no debería haber ningún error.</p>
+<p>Juego en fase pre-Alpha, aún no está ni de lejos listo para ser jugado, pero quiero ir haciendo pruebas para probar lo que tengo hecho, si todo va bien no debería haber ningún error. Los apartados que pueden probar son: Investigaciones, Tropas, Naves, Defensas y Mensajes, el resto aún no está listo</p>
 </div>
 <?php
 //genera caja investigación si es necesario
@@ -245,49 +251,49 @@ $inves_pend = mysql_fetch_array($query_inves_pend);
 		$tiempo_restante = $inves_pend["horafinalizar"] - time();
 		?>
     <script type="text/javascript" language="JavaScript"> 
-var tiempo = <?php echo $tiempo_restante; ?>;
-function contador(){
-	if(tiempo >= 86400){
-		var dias =  Math.floor(tiempo / 86400);
-		var horas = Math.floor(tiempo / 3600- (dias *24));
-		var minutos = tiempo/60 - (dias * 24 * 60);
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
-		if(dias > 1){
-			document.formulario.reloj.value=dias + " dias "+ horas + ":" +minutos +":"+ segundos;
+var tiempo_inves = <?php echo $tiempo_restante; ?>;
+function contador_inves(){
+	if(tiempo_inves >= 86400){
+		var dias_inves =  Math.floor(tiempo_inves / 86400);
+		var horas_inves = Math.floor(tiempo_inves / 3600- (dias_inves *24));
+		var minutos_inves = tiempo_inves/60 - (dias_inves * 24 * 60);
+		var minutos_inves = Math.floor(minutos_inves);
+		var segundos_inves = tiempo_inves % 60;
+		if(dias_inves > 1){
+			document.formulario_inves.reloj.value=dias + " dias "+ horas_inves + ":" +minutos_inves +":"+ segundos_inves;
 		}else{
-			document.formulario.reloj.value=dias + " dia "+ horas + ":" +minutos +":"+ segundos;
+			document.formulario_inves.reloj.value=dias + " dia "+ horas_inves + ":" +minutos_inves +":"+ segundos_inves;
 		}
 		
-	}else if (tiempo >= 3600){
-		var horas = Math.floor(tiempo / 3600);
-		var minutos = tiempo/60 - (horas * 60);
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
-		document.formulario.reloj.value= horas + ":" +minutos +":"+ segundos;
-	}else if (tiempo >= 60){
-		var minutos = tiempo/60;
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
-		document.formulario.reloj.value= minutos +":"+ segundos;
-	}else if(tiempo < 60){
-		var segundos = tiempo;
-		document.formulario.reloj.value= segundos;
+	}else if (tiempo_inves >= 3600){
+		var horas_inves = Math.floor(tiempo_inves / 3600);
+		var minutos_inves = tiempo_inves/60 - (horas_inves * 60);
+		var minutos_inves = Math.floor(minutos_inves);
+		var segundos_inves = tiempo_inves % 60;
+		document.formulario_inves.reloj.value= horas_inves + ":" +minutos_inves +":"+ segundos_inves;
+	}else if (tiempo_inves >= 60){
+		var minutos_inves = tiempo_inves/60;
+		var minutos_inves = Math.floor(minutos_inves);
+		var segundos_inves = tiempo_inves % 60;
+		document.formulario_inves.reloj.value= minutos_inves +":"+ segundos_inves;
+	}else if(tiempo_inves < 60){
+		var segundos_inves = tiempo_inves;
+		document.formulario_inves.reloj.value= segundos_inves;
 	}
-	tiempo--;
-	if (tiempo < 0){
+	tiempo_inves--;
+	if (tiempo_inves == 0){
 		location.reload();
 	}
 }
-window.onload = contador;
+window.onload = contador_inves;
 
-setInterval("contador()",1000);  
+setInterval("contador_inves()",1000);  
 </script> 
     <?php
 		echo '<div id="principal">';
 		echo '<table><tr>';
 		echo '<td>Investigación: '.$nombre_inves["nombre"].'('.$inves_pend["nivelnuevo"].')</td>';
-		echo '<td><form name="formulario"><input type="text" name="reloj" value="" size="55" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form> </td>';
+		echo '<td><form name="formulario_inves"><input type="text" name="reloj" value="" size="55" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form> </td>';
 		echo '</tr></table></div>';
 	}
 	
@@ -299,49 +305,49 @@ $cons_pend = mysql_fetch_array($query_cons_pend);
 		$tiempo_restante = $cons_pend["horafinalizar"] - time();
 		?>
     <script type="text/javascript" language="JavaScript"> 
-var tiempo = <?php echo $tiempo_restante; ?>;
-function contador(){
-	if(tiempo >= 86400){
-		var dias =  Math.floor(tiempo / 86400);
-		var horas = Math.floor(tiempo / 3600- (dias *24));
-		var minutos = tiempo/60 - (dias * 24 * 60);
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
+var tiempo_tropas = <?php echo $tiempo_restante; ?>;
+function contador_tropas(){
+	if(tiempo_tropas >= 86400){
+		var dias_tropas =  Math.floor(tiempo_tropas / 86400);
+		var horas_tropas = Math.floor(tiempo_tropas / 3600- (dias_tropas *24));
+		var minutos_tropas = tiempo_tropas/60 - (dias_tropas * 24 * 60);
+		var minutos_tropas = Math.floor(minutos_tropas);
+		var segundos_tropas = tiempo_tropas % 60;
 		if(dias > 1){
-			document.formulario.reloj.value=dias + " dias "+ horas + ":" +minutos +":"+ segundos;
+			document.formulario_tropas.reloj.value=dias_tropas + " dias "+ horas_tropas + ":" +minutos_tropas +":"+ segundos_tropas;
 		}else{
-			document.formulario.reloj.value=dias + " dia "+ horas + ":" +minutos +":"+ segundos;
+			document.formulario_tropas.reloj.value=dias_tropas + " dia "+ horas_tropas + ":" +minutos_tropas +":"+ segundos_tropas;
 		}
 		
-	}else if (tiempo >= 3600){
-		var horas = Math.floor(tiempo / 3600);
-		var minutos = tiempo/60 - (horas * 60);
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
-		document.formulario.reloj.value= horas + ":" +minutos +":"+ segundos;
-	}else if (tiempo >= 60){
-		var minutos = tiempo/60;
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
-		document.formulario.reloj.value= minutos +":"+ segundos;
-	}else if(tiempo < 60){
-		var segundos = tiempo;
-		document.formulario.reloj.value= segundos;
+	}else if (tiempo_tropas >= 3600){
+		var horas_tropas = Math.floor(tiempo_tropas / 3600);
+		var minutos_tropas = tiempo_tropas/60 - (horas_tropas * 60);
+		var minutos_tropas = Math.floor(minutos_tropas);
+		var segundos_tropas = tiempo_tropas % 60;
+		document.formulario_tropas.reloj.value= horas_tropas + ":" +minutos_tropas +":"+ segundos_tropas;
+	}else if (tiempo_tropas >= 60){
+		var minutos_tropas = tiempo_tropas/60;
+		var minutos_tropas = Math.floor(minutos_tropas);
+		var segundos_tropas = tiempo_tropas % 60;
+		document.formulario_tropas.reloj.value= minutos_tropas +":"+ segundos_tropas;
+	}else if(tiempo_tropas < 60){
+		var segundos_tropas = tiempo_tropas;
+		document.formulario_tropas.reloj.value= segundos_tropas;
 	}
-	tiempo--;
-	if (tiempo < 0){
+	tiempo_tropas--;
+	if (tiempo_tropas == 0){
 		location.reload();
 	}
 }
-window.onload = contador;
+window.onload = contador_tropas;
 
-setInterval("contador()",1000);  
+setInterval("contador_tropas()",1000);  
 </script> 
     <?php
 		echo '<div id="principal">';
 		echo '<table><tr>';
 		echo '<td> '.$cons_pend["unidad"].'('.$cons_pend["cantidad"].')</td>';
-		echo '<td><form name="formulario"><input type="text" name="reloj" value="" size="55" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form> </td>';
+		echo '<td><form name="formulario_tropas"><input type="text" name="reloj" value="" size="55" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form> </td>';
 		echo '</tr></table></div>';
 	}
 	
@@ -353,49 +359,49 @@ $cons_pend = mysql_fetch_array($query_cons_pend);
 		$tiempo_restante = $cons_pend["horafinalizar"] - time();
 		?>
     <script type="text/javascript" language="JavaScript"> 
-var tiempo = <?php echo $tiempo_restante; ?>;
-function contador(){
-	if(tiempo >= 86400){
-		var dias =  Math.floor(tiempo / 86400);
-		var horas = Math.floor(tiempo / 3600- (dias *24));
-		var minutos = tiempo/60 - (dias * 24 * 60);
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
-		if(dias > 1){
-			document.formulario.reloj.value=dias + " dias "+ horas + ":" +minutos +":"+ segundos;
+var tiempo_naves = <?php echo $tiempo_restante; ?>;
+function contador_naves(){
+	if(tiempo_naves >= 86400){
+		var dias_naves =  Math.floor(tiempo_naves / 86400);
+		var horas_naves = Math.floor(tiempo_naves / 3600- (dias_naves *24));
+		var minutos_naves = tiempo_naves/60 - (dias_naves * 24 * 60);
+		var minutos_naves = Math.floor(minutos_naves);
+		var segundos_naves = tiempo_naves % 60;
+		if(dias_naves > 1){
+			document.formulario_naves.reloj.value=dias_naves + " dias "+ horas_naves + ":" +minutos_naves +":"+ segundos_naves;
 		}else{
-			document.formulario.reloj.value=dias + " dia "+ horas + ":" +minutos +":"+ segundos;
+			document.formulario_naves.reloj.value=dias_naves + " dia "+ horas_naves + ":" +minutos_naves +":"+ segundos_naves;
 		}
 		
-	}else if (tiempo >= 3600){
-		var horas = Math.floor(tiempo / 3600);
-		var minutos = tiempo/60 - (horas * 60);
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
-		document.formulario.reloj.value= horas + ":" +minutos +":"+ segundos;
-	}else if (tiempo >= 60){
-		var minutos = tiempo/60;
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
-		document.formulario.reloj.value= minutos +":"+ segundos;
-	}else if(tiempo < 60){
-		var segundos = tiempo;
-		document.formulario.reloj.value= segundos;
+	}else if (tiempo_naves >= 3600){
+		var horas_naves = Math.floor(tiempo_naves / 3600);
+		var minutos_naves = tiempo_naves/60 - (horas_naves * 60);
+		var minutos_naves = Math.floor(minutos_naves);
+		var segundos_naves = tiempo_naves % 60;
+		document.formulario_naves.reloj.value= horas_naves + ":" +minutos_naves +":"+ segundos_naves;
+	}else if (tiempo_naves >= 60){
+		var minutos_naves = tiempo_naves/60;
+		var minutos_naves = Math.floor(minutos_naves);
+		var segundos_naves = tiempo_naves % 60;
+		document.formulario_naves.reloj.value= minutos_naves +":"+ segundos_naves;
+	}else if(tiempo_naves < 60){
+		var segundos_naves = tiempo_naves;
+		document.formulario_naves.reloj.value= segundos_naves;
 	}
-	tiempo--;
-	if (tiempo < 0){
+	tiempo_naves--;
+	if (tiempo_naves == 0){
 		location.reload();
 	}
 }
-window.onload = contador;
+window.onload = contador_naves;
 
-setInterval("contador()",1000);  
+setInterval("contador_naves()",1000);  
 </script> 
     <?php
 		echo '<div id="principal">';
 		echo '<table><tr>';
 		echo '<td> '.$cons_pend["unidad"].'('.$cons_pend["cantidad"].')</td>';
-		echo '<td><form name="formulario"><input type="text" name="reloj" value="" size="55" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form> </td>';
+		echo '<td><form name="formulario_naves"><input type="text" name="reloj" value="" size="55" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form> </td>';
 		echo '</tr></table></div>';
 	}
 	
@@ -407,49 +413,49 @@ $cons_pend = mysql_fetch_array($query_cons_pend);
 		$tiempo_restante = $cons_pend["horafinalizar"] - time();
 		?>
     <script type="text/javascript" language="JavaScript"> 
-var tiempo = <?php echo $tiempo_restante; ?>;
-function contador(){
-	if(tiempo >= 86400){
-		var dias =  Math.floor(tiempo / 86400);
-		var horas = Math.floor(tiempo / 3600- (dias *24));
-		var minutos = tiempo/60 - (dias * 24 * 60);
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
-		if(dias > 1){
-			document.formulario.reloj.value=dias + " dias "+ horas + ":" +minutos +":"+ segundos;
+var tiempo_defensas = <?php echo $tiempo_restante; ?>;
+function contador_defensas(){
+	if(tiempo_defensas >= 86400){
+		var dias_defensas =  Math.floor(tiempo_defensas / 86400);
+		var horas_defensas = Math.floor(tiempo_defensas / 3600- (dias_defensas*24));
+		var minutos_defensas = tiempo_defensas/60 - (dias_defensas * 24 * 60);
+		var minutos_defensas = Math.floor(minutos_defensas);
+		var segundos_defensas = tiempo_defensas % 60;
+		if(dias_defensas > 1){
+			document.formulario_defensas.reloj.value=dias_defensas + " dias "+ horas_defensas + ":" +minutos_defensas +":"+ segundos_defensas;
 		}else{
-			document.formulario.reloj.value=dias + " dia "+ horas + ":" +minutos +":"+ segundos;
+			document.formulario_defensas.reloj.value=dias_defensas + " dia "+ horas_defensas + ":" +minutos_defensas +":"+ segundos_defensas;
 		}
 		
-	}else if (tiempo >= 3600){
-		var horas = Math.floor(tiempo / 3600);
-		var minutos = tiempo/60 - (horas * 60);
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
-		document.formulario.reloj.value= horas + ":" +minutos +":"+ segundos;
-	}else if (tiempo >= 60){
-		var minutos = tiempo/60;
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
-		document.formulario.reloj.value= minutos +":"+ segundos;
-	}else if(tiempo < 60){
-		var segundos = tiempo;
-		document.formulario.reloj.value= segundos;
+	}else if (tiempo_defensas >= 3600){
+		var horas_defensas = Math.floor(tiempo_defensas / 3600);
+		var minutos_defensas = tiempo_defensas/60 - (horas_defensas * 60);
+		var minutos_defensas = Math.floor(minutos_defensas);
+		var segundos_defensas = tiempo_defensas % 60;
+		document.formulario_defensas.reloj.value= horas_defensas + ":" +minutos_defensas +":"+ segundos_defensas;
+	}else if (tiempo_defensas >= 60){
+		var minutos_defensas = tiempo_defensas/60;
+		var minutos_defensas = Math.floor(minutos_defensas);
+		var segundos_defensas = tiempo_defensas % 60;
+		document.formulario_defensas.reloj.value= minutos_defensas +":"+ segundos_defensas;
+	}else if(tiempo_defensas < 60){
+		var segundos_defensas = tiempo_defensas;
+		document.formulario_defensas.reloj.value= segundos_defensas;
 	}
-	tiempo--;
-	if (tiempo < 0){
+	tiempo_defensas--;
+	if (tiempo_defensas == 0){
 		location.reload();
 	}
 }
-window.onload = contador;
+window.onload = contador_defensas;
 
-setInterval("contador()",1000);  
+setInterval("contador_defensas()",1000);  
 </script> 
     <?php
 		echo '<div id="principal">';
 		echo '<table><tr>';
 		echo '<td> '.$cons_pend["unidad"].'('.$cons_pend["cantidad"].')</td>';
-		echo '<td><form name="formulario"><input type="text" name="reloj" value="" size="55" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form> </td>';
+		echo '<td><form name="formulario_defensas"><input type="text" name="reloj" value="" size="55" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form> </td>';
 		echo '</tr></table></div>';
 	} 
 ?>
@@ -628,11 +634,11 @@ function cambio(numero){
 }
 </script>
 <div id="cambio">
-<table>
+<table width="418">
 <tr>
-<td><a onclick="cambio(1)" href="#">Tropas en el Planeta</a></td>
-<td><a onclick="cambio(2)" href="#">Construir Tropas</a></td>
-<td><a onclick="cambio(3)" href="#">Requisitos</a></td>
+<td width="147"><a onclick="cambio(1)" href="#">Tropas en el Planeta</a></td>
+<td width="113"><a onclick="cambio(2)" href="#">Construir Tropas</a></td>
+<td width="102"><a onclick="cambio(3)" href="#">Requisitos</a></td>
 </tr>
 </table>
 </div>
@@ -823,7 +829,7 @@ function cambio(numero){
 }
 </script>
 <div id="cambio">
-<table>
+<table width="402">
 <tr>
 <td><a onclick="cambio(1)" href="#">Naves en el Planeta</a></td>
 <td><a onclick="cambio(2)" href="#">Construir Naves</a></td>
@@ -1185,8 +1191,40 @@ while($nuevas_defensas_dat = mysql_fetch_array($query_nuevas_defensas)){
 </div>
 <?php
 }else if($_GET["control"] == "galaxia"){
+	$query_galaxia_actual = mysql_query('SELECT galaxia, sector, cuadrante FROM mapa WHERE id = \''.$_SESSION["planeta"].'\'') or die(mysql_error());
+	$galaxia_actual = mysql_fetch_array($query_galaxia_actual);
+	$query_lista_galaxias = mysql_query('SELECT galaxia FROM mapa_estructura') or die(mysql_error());
+	$query_datos_galaxia = mysql_query('SELECT sectores, cuadrantes, posiciones FROM mapa_estructura WHERE galaxia =\''.$galaxia_actual["galaxia"].'\'') or die(mysql_error());
+	$datos_galaxia = mysql_fetch_array($query_datos_galaxia);
 ?>
 	<div id="principal">
+    <form action="juego-index.php?control=galaxia" method="post" name="selec_galaxia">
+    <table>
+    <tr>
+    <td>Galaxia:<select name="galaxia" onchange="document.selec_galaxia.submit();">
+    <?php 
+	while($lista_galaxias = mysql_fetch_array($query_lista_galaxias)){
+		echo '<option>'.$lista_galaxias["galaxia"].'</option>';
+	}
+	?>
+    </select></td>
+    <td>Sector:<select name="sector" onchange="document.selec_galaxia.submit();">
+    <?php 
+	for($i= 1; $i <= $datos_galaxia["sectores"];$i++){
+		echo '<option>'.$i.'</option>';
+	}
+	?>
+    </select></td>
+    <td>Cuadrante:<select name="cuadrante" onchange="document.selec_galaxia.submit();">
+    <?php 
+	for($i= 1; $i <= $datos_galaxia["cuadrantes"];$i++){
+		echo '<option>'.$i.'</option>';
+	}
+	?>
+    </select></td>
+    </tr>
+    </table>
+    </form>
 <p>galaxia.</p>
 </div>
 <?php
