@@ -5,7 +5,6 @@ html, body{
 	padding:0; 
 	width:100%; 
 	height:100%; 
-	overflow:hidden;
 	color:#CCC;
 }
 
@@ -36,8 +35,8 @@ a:link{
 
 #fondo{
 	width:100%; 
-	height:100%;
-	
+	height:auto;
+	overflow:auto;
 }
 
 #contenedor{
@@ -45,6 +44,7 @@ a:link{
 	width:90%;
 	margin:auto;
 	margin-bottom:25px;
+	overflow:auto;
 }
 
 #recursos{
