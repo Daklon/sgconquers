@@ -7,7 +7,6 @@ $seleciona_bd = mysql_select_db('DATABASE') or die ('Error al seleccionar la bas
 
 //bucle que ejecuta continuamente el motor
 while(true){
-echo 'inicio bucle/ ';
 //comprueba si se ha perdido la conexión con la bd, en cuyo caso la reestablece
 if( !mysql_ping($conecta) ){
 	mysql_close($conecta);
@@ -73,7 +72,6 @@ if(!empty($inves_pend)){
 }
 if(empty($mov_pend) && empty($cons_pend) && empty($inves_pend)){
 	//no hay tareas, entra en descanso para no consumir recursos
-	echo 'entro en sleep ';
 	sleep(5);
 	continue;
 }
@@ -97,14 +95,11 @@ $tiempo_actual = time();
 
 //calculo si el tiempo es superior o inferior a 50 segundos y entro en sleep el tiempo necesario
 if (($tiempo_actual + 5) < $tiempo_tarea){
-	echo "tarea reconocida, entro en sleep el tiempo necesario ";
-	echo "tiempo_cons = ".$tiempo_cons."tiempo_inves = ". $tiempo_inves." tiempo_actual = ".$tiempo_actual."/".$ejecuta;
 	sleep(5);
 	continue;
 }else if(($tiempo_actual + 5) > $tiempo_tarea){
 	$tiemposleep = $tiempo_tarea - $tiempo_actual;
 	if($tiemposleep != 0 && $tiemposleep > 0){
-		echo "|tiemposleep = ".$tiemposleep."|";
 		sleep($tiemposleep);
 	}
 }
@@ -112,7 +107,6 @@ if (($tiempo_actual + 5) < $tiempo_tarea){
 
 //FASE 3: ejecutar la tarea dependiendo del tipo
 if($ejecuta == "movimiento"){
-	echo "movimiento";
 }else if($ejecuta == "construccion"){
 	$query_actual = mysql_query('SELECT cancelado, jugador, planeta, cantidad, unidad, tipo, id FROM cons_pend WHERE id=\''.$cons_pend[0].'\' ') or die(mysql_error());
 	$tarea_actual = mysql_fetch_array($query_actual);
@@ -134,7 +128,6 @@ if($ejecuta == "movimiento"){
 		mysql_query('DELETE FROM cons_pend WHERE cancelado = \'1\'') or die(mysql_error());
 	}
 }else if($ejecuta == "investigacion"){
-	echo "investigacion";
 	$query_actual = mysql_query('SELECT cancelado, jugador, investigacion, nivelnuevo FROM inves_pend WHERE id=\''.$inves_pend[0].'\' ') or die(mysql_error());
 	$tarea_actual = mysql_fetch_array($query_actual);
 	if ($tarea_actual[0] == 0){

@@ -28,7 +28,7 @@
 <div id="principal">
 <p>Puedes registrarte para participar en la primera alpha cerrada, además de efectuar el registro a través de este formulario, deberás registrarte en el foro y solicitar tu participación (si no lo has hecho ya), se te asignará un número y podrás jugar cuando te toque.
 <?php
-mysql_connect('LOCALHOST','USER','PASSWORD') or die ('Ha fallado la conexi&oacute;n:'.mysql_error());
+mysql_connect('localhost','USER','PASSWORD') or die ('Ha fallado la conexi&oacute;n:'.mysql_error());
 mysql_select_db('DATABASE') or die ('Error al seleccionar la base de datos.'.mysql_error());
 
 
@@ -56,13 +56,13 @@ if (isset($_POST["nick"])) {
 			if ($email_exist>0|$username_exist>0) {
 				echo "El nombre de usuario o la cuenta de correo están ya en uso";
 			}else{
-				$query_planetas_libres = mysql_query('SELECT id FROM mapa WHERE dueño IS NULL') or die(mysql_error());
+				$query_planetas_libres = mysql_query('SELECT id FROM mapa WHERE dueno IS NULL') or die(mysql_error());
 				$cantidad_planetas_libres = mysql_num_rows($query_planetas_libres);
 				mt_srand(time());
 				$random = mt_rand(0,$cantidad_planetas_libres - 1);
 				$md5_password= md5($password);
 				$query = 'INSERT INTO jugadores (nick, password, email, raza, recurso1, recurso2, planeta1) VALUES (\''.$username.'\',\''.$md5_password.'\',\''.$email.'\',\''.$raza.'\',\''.$recursos[0].'\',\''.$recursos[1].'\',\''.$random.'\')';
-				$query_mapa = 'UPDATE mapa SET dueño=\''.$username.'\' WHERE id=\''.$random.'\'';
+				$query_mapa = 'UPDATE mapa SET dueno=\''.$username.'\' WHERE id=\''.$random.'\'';
 				
 				mysql_query($query) or die(mysql_error());
 				mysql_query($query_mapa) or die(mysql_error());

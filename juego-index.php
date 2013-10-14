@@ -1,6 +1,6 @@
 <?php session_start(); 
-mysql_connect('LOCALHOST','USER','PASSWORD') or die ('Ha fallado la conexi&oacute;n:'.mysql_error());
-mysql_select_db('DATABASE') or die ('Error al seleccionar la base de datos.'.mysql_error());
+mysql_connect('localhost','sgcon','gool34') or die ('Ha fallado la conexi&oacute;n:'.mysql_error());
+mysql_select_db('sgcon') or die ('Error al seleccionar la base de datos.'.mysql_error());
 
 //almacena datos importantes sobre el usuario
 $query_jugador_dat = mysql_query('SELECT recurso1, recurso2, inv1, inv2, inv3, inv4, inv5, inv6, inv7, inv8, inv9, inv10, inv11, inv12, inv13, nick, codigoseguridad, planeta1, planeta2, planeta3, planeta4, planeta5 FROM jugadores WHERE nick =\''.$_SESSION['nick'].'\' AND codigoseguridad =\''.$_SESSION["codigoseguridad"].'\'') or die (mysql_error());
@@ -50,6 +50,49 @@ if ($tiempo_total >= 86400){
 		echo $segundos.' Segundos';
 	}
 }
+
+function imprime_unidades($array, $indice, $cantidad){
+	$cadena = "";
+	$indice--;
+	for($i=1;$i<=$indice;$i++){
+		if($cantidad[$i] > 0){
+			if($i == 1){
+				$cadena = $array[$i];
+			}else{
+				$cadena = $cadena.', '.$array[$i];
+			}
+		}
+	}
+	return $cadena;
+}
+
+function imprime_cantidades($indice, $cantidad){
+	$cadena = "";
+	$indice--;
+	for($i=1;$i<=$indice;$i++){
+		if($cantidad[$i] > 0){
+			if($i == 1){
+				$cadena = $cantidad[$i];
+			}else{
+				$cadena = $cadena.', '.$cantidad[$i];
+			}
+		}
+	}
+	return $cadena;
+}
+
+	function set_licenciar($tropas, $cantidad, $indice){
+		$cadena = "";
+		for($i = 1;$i<$indice; $i++){
+			if($i == 1){
+				$cadena = $tropas[$i]."=".$cantidad[$i];
+			}else{
+				$cadena = $cadena.",".$tropas[$i]."=".$cantidad[$i];
+			}
+		}
+		return $cadena;
+	}
+	
 //comprueba que el usuario está logueado y es correcto
 if($_SESSION["nick"] == $jugador_dat["nick"] && $_SESSION["codigoseguridad"] == $jugador_dat["codigoseguridad"] && isset($_SESSION["nick"]) && isset($_SESSION["codigoseguridad"])){
 	//comprueba si se ha cambiado de planeta
@@ -158,6 +201,17 @@ if($_SESSION["nick"] == $jugador_dat["nick"] && $_SESSION["codigoseguridad"] == 
 			mysql_query('INSERT INTO mensajes (de, para, hora, asunto, mensaje) VALUES (\''.$remitente.'\', \''.$destinatario.'\',\''.$hora.'\',\''.$asunto.'\',\''.$cuerpo.'\')') or die(mysql_error());
 		}
 	}
+	
+	//comprueba si se quiere borrar un mensaje, se comprueba que sea el destinatario, lo borra y redirige a mensajes
+	if($_GET["accion"] == "borrar_mensaje"){
+		$id = htmlentities($_GET["id"]);
+		$query_borrar = mysql_query('SELECT para FROM mensajes WHERE id=\''.$id.'\'') or die(mysql_error());
+		$borrar = mysql_fetch_array($query_borrar);
+		if ($_SESSION["nick"] == $borrar["para"]){
+			mysql_query('DELETE FROM mensajes WHERE id=\''.$id.'\'') or die(mysql_error());
+		}
+	}
+	
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -171,7 +225,64 @@ if($_SESSION["nick"] == $jugador_dat["nick"] && $_SESSION["codigoseguridad"] == 
 <div id="background">
 
 <div id="fondo">
+<?php
+//esto hay que moverlo fuera del código html, pero lo dejo aquí de momento para ver mensajes de error
+//comprueba si se ha dado la orden de enviar tropas
+	if(isset($_POST["enviar_tropas"])){
+		$enviar_tropas_array = array();
+		$array_cantidad_tropas = array();
+		$indice = 1;
+		while(isset($_POST[$indice])){
+			$enviar_tropas_array[$indice] = htmlentities($_POST[$indice]);
+			$array_cantidad_tropas[$indice] = $_POST[$enviar_tropas_array[$indice]];
+			$indice++;
+		}
+		$query_existe_tropa = mysql_query('SELECT '.imprime_unidades($enviar_tropas_array, $indice, $array_cantidad_tropas).' FROM existencias_tropas WHERE dueno=\''.$_SESSION["nick"].'\' AND planetaactual=\''.$_SESSION["planeta"].'\'') or die(mysql_error());
+		$existe_tropa = mysql_fetch_array($query_existe_tropa);
+		$ejecuta_tropa = true;
+		for($i = 1;$i<=$indice;$i++){
+			if($array_cantidad_tropas[$indice] > $existe_tropa[$i]){
+				$ejecuta_tropa= false;
+			}
+		}
+		//aquí falta calcular tiempos y meterlos en la bd y quitar las tropas de la cantidad disponible
+		if($ejecuta_tropa){
+			mysql_query('INSERT INTO mov_pend (planetaactual, jugador, horasalida, '.imprime_unidades($enviar_tropas_array, $indice, $array_cantidad_tropas).') VALUES ('.$_SESSION["planeta"].', \''.$_SESSION["nick"].'\', \''.time().'\', '.imprime_cantidades($indice, $array_cantidad_tropas).')') or die(mysql_error());
+		}
+	}
+	//comprueba si existe la orden de licenciar tropas
+	if(isset($_POST["licenciar_tropas"])){
+		$licenciar_tropas_array = array();
+		$array_cantidad_tropas_licenciar = array();
+		$indice = 1;
+		while(isset($_POST[$indice])){
+			$licenciar_tropas_array[$indice] = htmlentities($_POST[$indice]);
+			$array_cantidad_tropas_licenciar[$indice] = $_POST[$licenciar_tropas_array[$indice]];
+			$indice++;
+		}
+		$query_existe_tropa_licenciar = mysql_query('SELECT '.imprime_unidades($licenciar_tropas_array, $indice, $array_cantidad_tropas_licenciar).' FROM existencias_tropas WHERE dueno=\''.$_SESSION["nick"].'\' AND planetaactual=\''.$_SESSION["planeta"].'\'') or die(mysql_error());
+		$existe_tropa_licenciar = mysql_fetch_array($query_existe_tropa_licenciar);
+		$ejecuta_tropa_licenciar = true;
+		$array_tropas_restantes = array();
+		$cantidad_tropas_vacias = 0;
+		for($i = 1;$i<=$indice;$i++){
+			$array_tropas_restantes[$i] = $existe_tropa_licenciar[$i-1] - $array_cantidad_tropas_licenciar[$i];
+			if($array_tropas_restantes[$i] == 0){
+				$cantidad_tropas_vacias++;
+			}else if($array_tropas_restantes[$i] < 0){
+				$array_tropas_restantes[$i] = 0;
+				$cantidad_tropas_vacias++;
+			}
+		}
+		if($indice == $cantidad_tropas_vacias){
+			mysql_query('DELETE FROM existencias_tropas WHERE planetaactual=\''.$_SESSION["planeta"].'\' AND dueno=\''.$_SESSION["nick"].'\'') or die(mysql_error());
+		}else{//falta función que cree una cadena con los nombres y los valores de cada unidad para la sintaxis mysql
+			mysql_query('UPDATE existencias_tropas SET '.set_licenciar($licenciar_tropas_array,$array_tropas_restantes,$indice).' WHERE planetaactual=\''.$_SESSION["planeta"].'\' AND dueno=\''.$_SESSION["nick"].'\'') or die(mysql_error());
+		}
+	}
+	
 
+?>
 
 <div id="contenedor">
 <div id="recursos">
@@ -229,379 +340,20 @@ if($_GET["control"] == "salir"){
 <p><a href="juego-index.php?control=ranking">Ranking</a></p>
 <p><a href="juego-index.php?control=opciones">Opciones</a></p>
 <p><a href="http://foro.sgconquers.hol.es">Foro</a></p>
+<p><a href="bugs.alphasgcon.hol.es">Bugs</a></p>
 <p><a href="juego-index.php?control=salir">Salir</a></p>
 
 </div>
 <?php 
 //aquí falta mucho por añadir
 if($_GET["control"] == "inicio" || $_GET["control"] == ""){
-	?>
-	<div id="principal">
-<p>Juego en fase pre-Alpha, aún no está ni de lejos listo para ser jugado, pero quiero ir haciendo pruebas para probar lo que tengo hecho, si todo va bien no debería haber ningún error. Los apartados que pueden probar son: Investigaciones, Tropas, Naves, Defensas y Mensajes, el resto aún no está listo</p>
-</div>
-<?php
-//genera caja investigación si es necesario
-$query_inves_pend = mysql_query('SELECT investigacion, nivelnuevo, horafinalizar FROM inves_pend WHERE jugador=\''.$_SESSION['nick'].'\' AND cancelado=\'0\'')or die(mysql_error());
-$inves_pend = mysql_fetch_array($query_inves_pend);
-	$query_nombre_inves = mysql_query('SELECT nombre FROM investigaciones WHERE raza=\''.$_SESSION['raza'].'\' AND numero=\''.$inves_pend["investigacion"].'\'')or die(mysql_error());
-	$nombre_inves = mysql_fetch_array($query_nombre_inves);
-	
-	
-	if(!empty($inves_pend)){
-		$tiempo_restante = $inves_pend["horafinalizar"] - time();
-		?>
-    <script type="text/javascript" language="JavaScript"> 
-var tiempo_inves = <?php echo $tiempo_restante; ?>;
-function contador_inves(){
-	if(tiempo_inves >= 86400){
-		var dias_inves =  Math.floor(tiempo_inves / 86400);
-		var horas_inves = Math.floor(tiempo_inves / 3600- (dias_inves *24));
-		var minutos_inves = tiempo_inves/60 - (dias_inves * 24 * 60);
-		var minutos_inves = Math.floor(minutos_inves);
-		var segundos_inves = tiempo_inves % 60;
-		if(dias_inves > 1){
-			document.formulario_inves.reloj.value=dias + " dias "+ horas_inves + ":" +minutos_inves +":"+ segundos_inves;
-		}else{
-			document.formulario_inves.reloj.value=dias + " dia "+ horas_inves + ":" +minutos_inves +":"+ segundos_inves;
-		}
-		
-	}else if (tiempo_inves >= 3600){
-		var horas_inves = Math.floor(tiempo_inves / 3600);
-		var minutos_inves = tiempo_inves/60 - (horas_inves * 60);
-		var minutos_inves = Math.floor(minutos_inves);
-		var segundos_inves = tiempo_inves % 60;
-		document.formulario_inves.reloj.value= horas_inves + ":" +minutos_inves +":"+ segundos_inves;
-	}else if (tiempo_inves >= 60){
-		var minutos_inves = tiempo_inves/60;
-		var minutos_inves = Math.floor(minutos_inves);
-		var segundos_inves = tiempo_inves % 60;
-		document.formulario_inves.reloj.value= minutos_inves +":"+ segundos_inves;
-	}else if(tiempo_inves < 60){
-		var segundos_inves = tiempo_inves;
-		document.formulario_inves.reloj.value= segundos_inves;
-	}
-	tiempo_inves--;
-	if (tiempo_inves == 0){
-		location.reload();
-	}
-}
-window.onload = contador_inves;
 
-setInterval("contador_inves()",1000);  
-</script> 
-    <?php
-		echo '<div id="principal">';
-		echo '<table><tr>';
-		echo '<td>Investigación: '.$nombre_inves["nombre"].'('.$inves_pend["nivelnuevo"].')</td>';
-		echo '<td><form name="formulario_inves"><input type="text" name="reloj" value="" size="55" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form> </td>';
-		echo '</tr></table></div>';
-	}
-	
-	//genera caja para construcción tropas si es necesario
-	$query_cons_pend = mysql_query('SELECT unidad, cantidad, horafinalizar FROM cons_pend WHERE jugador=\''.$_SESSION['nick'].'\' AND cancelado=\'0\' AND planeta=\''.$_SESSION["planeta"].'\' AND tipo=\'tropas\'')or die(mysql_error());
-$cons_pend = mysql_fetch_array($query_cons_pend);
-	
-	if(!empty($cons_pend)){
-		$tiempo_restante = $cons_pend["horafinalizar"] - time();
-		?>
-    <script type="text/javascript" language="JavaScript"> 
-var tiempo_tropas = <?php echo $tiempo_restante; ?>;
-function contador_tropas(){
-	if(tiempo_tropas >= 86400){
-		var dias_tropas =  Math.floor(tiempo_tropas / 86400);
-		var horas_tropas = Math.floor(tiempo_tropas / 3600- (dias_tropas *24));
-		var minutos_tropas = tiempo_tropas/60 - (dias_tropas * 24 * 60);
-		var minutos_tropas = Math.floor(minutos_tropas);
-		var segundos_tropas = tiempo_tropas % 60;
-		if(dias > 1){
-			document.formulario_tropas.reloj.value=dias_tropas + " dias "+ horas_tropas + ":" +minutos_tropas +":"+ segundos_tropas;
-		}else{
-			document.formulario_tropas.reloj.value=dias_tropas + " dia "+ horas_tropas + ":" +minutos_tropas +":"+ segundos_tropas;
-		}
-		
-	}else if (tiempo_tropas >= 3600){
-		var horas_tropas = Math.floor(tiempo_tropas / 3600);
-		var minutos_tropas = tiempo_tropas/60 - (horas_tropas * 60);
-		var minutos_tropas = Math.floor(minutos_tropas);
-		var segundos_tropas = tiempo_tropas % 60;
-		document.formulario_tropas.reloj.value= horas_tropas + ":" +minutos_tropas +":"+ segundos_tropas;
-	}else if (tiempo_tropas >= 60){
-		var minutos_tropas = tiempo_tropas/60;
-		var minutos_tropas = Math.floor(minutos_tropas);
-		var segundos_tropas = tiempo_tropas % 60;
-		document.formulario_tropas.reloj.value= minutos_tropas +":"+ segundos_tropas;
-	}else if(tiempo_tropas < 60){
-		var segundos_tropas = tiempo_tropas;
-		document.formulario_tropas.reloj.value= segundos_tropas;
-	}
-	tiempo_tropas--;
-	if (tiempo_tropas == 0){
-		location.reload();
-	}
-}
-window.onload = contador_tropas;
+	include("include/inicio.php");
 
-setInterval("contador_tropas()",1000);  
-</script> 
-    <?php
-		echo '<div id="principal">';
-		echo '<table><tr>';
-		echo '<td> '.$cons_pend["unidad"].'('.$cons_pend["cantidad"].')</td>';
-		echo '<td><form name="formulario_tropas"><input type="text" name="reloj" value="" size="55" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form> </td>';
-		echo '</tr></table></div>';
-	}
-	
-	//genera caja para construcción navess si es necesario
-	$query_cons_pend = mysql_query('SELECT unidad, cantidad, horafinalizar FROM cons_pend WHERE jugador=\''.$_SESSION['nick'].'\' AND cancelado=\'0\' AND planeta=\''.$_SESSION["planeta"].'\' AND tipo=\'naves\'')or die(mysql_error());
-$cons_pend = mysql_fetch_array($query_cons_pend);
-	
-	if(!empty($cons_pend)){
-		$tiempo_restante = $cons_pend["horafinalizar"] - time();
-		?>
-    <script type="text/javascript" language="JavaScript"> 
-var tiempo_naves = <?php echo $tiempo_restante; ?>;
-function contador_naves(){
-	if(tiempo_naves >= 86400){
-		var dias_naves =  Math.floor(tiempo_naves / 86400);
-		var horas_naves = Math.floor(tiempo_naves / 3600- (dias_naves *24));
-		var minutos_naves = tiempo_naves/60 - (dias_naves * 24 * 60);
-		var minutos_naves = Math.floor(minutos_naves);
-		var segundos_naves = tiempo_naves % 60;
-		if(dias_naves > 1){
-			document.formulario_naves.reloj.value=dias_naves + " dias "+ horas_naves + ":" +minutos_naves +":"+ segundos_naves;
-		}else{
-			document.formulario_naves.reloj.value=dias_naves + " dia "+ horas_naves + ":" +minutos_naves +":"+ segundos_naves;
-		}
-		
-	}else if (tiempo_naves >= 3600){
-		var horas_naves = Math.floor(tiempo_naves / 3600);
-		var minutos_naves = tiempo_naves/60 - (horas_naves * 60);
-		var minutos_naves = Math.floor(minutos_naves);
-		var segundos_naves = tiempo_naves % 60;
-		document.formulario_naves.reloj.value= horas_naves + ":" +minutos_naves +":"+ segundos_naves;
-	}else if (tiempo_naves >= 60){
-		var minutos_naves = tiempo_naves/60;
-		var minutos_naves = Math.floor(minutos_naves);
-		var segundos_naves = tiempo_naves % 60;
-		document.formulario_naves.reloj.value= minutos_naves +":"+ segundos_naves;
-	}else if(tiempo_naves < 60){
-		var segundos_naves = tiempo_naves;
-		document.formulario_naves.reloj.value= segundos_naves;
-	}
-	tiempo_naves--;
-	if (tiempo_naves == 0){
-		location.reload();
-	}
-}
-window.onload = contador_naves;
-
-setInterval("contador_naves()",1000);  
-</script> 
-    <?php
-		echo '<div id="principal">';
-		echo '<table><tr>';
-		echo '<td> '.$cons_pend["unidad"].'('.$cons_pend["cantidad"].')</td>';
-		echo '<td><form name="formulario_naves"><input type="text" name="reloj" value="" size="55" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form> </td>';
-		echo '</tr></table></div>';
-	}
-	
-	//genera caja para construcción defensas si es necesario
-	$query_cons_pend = mysql_query('SELECT unidad, cantidad, horafinalizar FROM cons_pend WHERE jugador=\''.$_SESSION['nick'].'\' AND cancelado=\'0\' AND planeta=\''.$_SESSION["planeta"].'\' AND tipo=\'defensas\'')or die(mysql_error());
-$cons_pend = mysql_fetch_array($query_cons_pend);
-	
-	if(!empty($cons_pend)){
-		$tiempo_restante = $cons_pend["horafinalizar"] - time();
-		?>
-    <script type="text/javascript" language="JavaScript"> 
-var tiempo_defensas = <?php echo $tiempo_restante; ?>;
-function contador_defensas(){
-	if(tiempo_defensas >= 86400){
-		var dias_defensas =  Math.floor(tiempo_defensas / 86400);
-		var horas_defensas = Math.floor(tiempo_defensas / 3600- (dias_defensas*24));
-		var minutos_defensas = tiempo_defensas/60 - (dias_defensas * 24 * 60);
-		var minutos_defensas = Math.floor(minutos_defensas);
-		var segundos_defensas = tiempo_defensas % 60;
-		if(dias_defensas > 1){
-			document.formulario_defensas.reloj.value=dias_defensas + " dias "+ horas_defensas + ":" +minutos_defensas +":"+ segundos_defensas;
-		}else{
-			document.formulario_defensas.reloj.value=dias_defensas + " dia "+ horas_defensas + ":" +minutos_defensas +":"+ segundos_defensas;
-		}
-		
-	}else if (tiempo_defensas >= 3600){
-		var horas_defensas = Math.floor(tiempo_defensas / 3600);
-		var minutos_defensas = tiempo_defensas/60 - (horas_defensas * 60);
-		var minutos_defensas = Math.floor(minutos_defensas);
-		var segundos_defensas = tiempo_defensas % 60;
-		document.formulario_defensas.reloj.value= horas_defensas + ":" +minutos_defensas +":"+ segundos_defensas;
-	}else if (tiempo_defensas >= 60){
-		var minutos_defensas = tiempo_defensas/60;
-		var minutos_defensas = Math.floor(minutos_defensas);
-		var segundos_defensas = tiempo_defensas % 60;
-		document.formulario_defensas.reloj.value= minutos_defensas +":"+ segundos_defensas;
-	}else if(tiempo_defensas < 60){
-		var segundos_defensas = tiempo_defensas;
-		document.formulario_defensas.reloj.value= segundos_defensas;
-	}
-	tiempo_defensas--;
-	if (tiempo_defensas == 0){
-		location.reload();
-	}
-}
-window.onload = contador_defensas;
-
-setInterval("contador_defensas()",1000);  
-</script> 
-    <?php
-		echo '<div id="principal">';
-		echo '<table><tr>';
-		echo '<td> '.$cons_pend["unidad"].'('.$cons_pend["cantidad"].')</td>';
-		echo '<td><form name="formulario_defensas"><input type="text" name="reloj" value="" size="55" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form> </td>';
-		echo '</tr></table></div>';
-	} 
-?>
-
-<?php
 }else if($_GET["control"] == "investiga"){
-	$inves_query = mysql_query('SELECT nombre, descripcion, recurso1, recurso2, tiempo, numero FROM investigaciones WHERE raza =\''.$_SESSION["raza"].'\'') or die (mysql_error());
-	$query_inves_pend = mysql_query('SELECT id, investigacion, horafinalizar FROM inves_pend WHERE jugador=\''.$_SESSION['nick'].'\' AND cancelado=\'0\'')or die(mysql_error());
-	$inves_pend = mysql_fetch_row($query_inves_pend);
 
-?>
-<div id="principal">
-<!-- Script encargado de separar las investigaciones por apartados-->
-<script>
-function cambio(numero){
-	switch (numero){
-		case 1:
-			document.getElementById("generales").style.display = 'block';
-			document.getElementById("tropas").style.display = 'none';
-			document.getElementById("naves").style.display = 'none';
-			document.getElementById("defensas").style.display = 'none';
-		break;	
-		case 2:
-			document.getElementById("generales").style.display = 'none';
-			document.getElementById("tropas").style.display = 'block';
-			document.getElementById("naves").style.display = 'none';
-			document.getElementById("defensas").style.display = 'none';
-		break;
-		case 3:
-			document.getElementById("generales").style.display = 'none';
-			document.getElementById("tropas").style.display = 'none';
-			document.getElementById("naves").style.display = 'block';
-			document.getElementById("defensas").style.display = 'none';
-		break;
-		case 4:
-			document.getElementById("generales").style.display = 'none';
-			document.getElementById("tropas").style.display = 'none';
-			document.getElementById("naves").style.display = 'none';
-			document.getElementById("defensas").style.display = 'block';	
-	}
-}
-</script>
-	<?php
-	//bucle que muestra todas las investigaciones accesibles(falta dividirlos por apartados)
-	$indice = 2;
-	while($inves_dat = mysql_fetch_assoc($inves_query)){
-	?>
-	<div id="investigacion">
-   	<?php
-	//calcula el tiempo de la investigación en cuestión
-	$tiempo_total = tiempoinves($inves_dat["tiempo"], $jugador_dat[$indice]);
-	echo '<p>';
-	//imprime el nombre junto al nivel
-		printf("%s(%s)",$inves_dat["nombre"],$jugador_dat[$indice]);
-	echo '<div id="botonmejora">';
-	//si se tienen los recursos y no se ha iniciado otra investigación, imprime el form para subir nivel, si no muestra el mensaje de notienes recursos
-	if ($jugador_dat["recurso1"] >= ($inves_dat["recurso1"] * pow(2, $jugador_dat[$indice])) && $jugador_dat["recurso2"] >= ($inves_dat["recurso2"] * pow(2, $jugador_dat[$indice])) && empty($inves_pend[0])){
-    	echo '<form action="juego-index.php?control=investiga" method="post">';
-		echo '<input type="submit" value="Subir Nivel" name="subirnivel">';
-		echo '<input type="hidden" value="'.$inves_dat["numero"].'" name="numero_inves">';
-		echo '<input type="hidden" value="'.($jugador_dat["inv".$inves_dat["numero"]] + 1) .'" name="nuevo_nivel">';
-		echo '<input type="hidden" value="'.$tiempo_total.'" name="tiempo">';
-		echo '<input type="hidden" value="'.($inves_dat["recurso1"] * pow(2, $jugador_dat[$indice])).'" name="recurso1">';
-		echo '<input type="hidden" value="'.($inves_dat["recurso2"] * pow(2, $jugador_dat[$indice])).'" name="recurso2">';
-		echo '</form>';
-	}else if(!empty($inves_pend[0]) && ($indice - 1 != $inves_pend[1])){
-		echo '<p>Ya tienes una investigación en curso</p>';
-	}else if(($indice - 1 == $inves_pend[1])){
-		$tiempo_restante = $inves_pend[2] - time();
-		?>
-    <script type="text/javascript" language="JavaScript"> 
-var tiempo = <?php echo $tiempo_restante; ?>;
-function contador(){
-	if(tiempo >= 86400){
-		var dias =  Math.floor(tiempo / 86400);
-		var horas = Math.floor(tiempo / 3600- (dias *24));
-		var minutos = tiempo/60 - (dias * 24 * 60);
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
-		if(dias > 1){
-			document.formulario.reloj.value=dias + " dias "+ horas + ":" +minutos +":"+ segundos;
-		}else{
-			document.formulario.reloj.value=dias + " dia "+ horas + ":" +minutos +":"+ segundos;
-		}
-		
-	}else if (tiempo >= 3600){
-		var horas = Math.floor(tiempo / 3600);
-		var minutos = tiempo/60 - (horas * 60);
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
-		document.formulario.reloj.value= horas + ":" +minutos +":"+ segundos;
-	}else if (tiempo >= 60){
-		var minutos = tiempo/60;
-		var minutos = Math.floor(minutos);
-		var segundos = tiempo % 60;
-		document.formulario.reloj.value= minutos +":"+ segundos;
-	}else if(tiempo < 60){
-		var segundos = tiempo;
-		document.formulario.reloj.value= segundos;
-	}
-	tiempo--;
-	if (tiempo < 0){
-		location.reload();
-	}
-}
-window.onload = contador;
+	include("include/investigacion.php");
 
-setInterval("contador()",1000);  
-</script> 
-    <?php
-		echo '<form name="formulario"><input type="text" name="reloj" value="" size="25" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form>';
-		echo '<form action="juego-index.php?control=investiga" method="post">';
-		echo '<input type="submit" value="Cancelar" name="cancelar_inves">';
-		echo '</form>';		
-	}else{
-		echo '<p>No tienes suficientes recursos</p>';	
-	}
-    echo '</div>';
-	echo '</p>';
-	echo '<p>';
-	//imprime la descripción de la investigación
-		printf("%s",$inves_dat["descripcion"]);
-	echo '</p>';
-	echo '<p>';
-	//imprime cuanto cuesa en el recurso1
-		printf("recurso1: %s",($inves_dat["recurso1"] * pow(2, $jugador_dat[$indice])));
-	echo '</p>';
-	echo '<p>';
-	//imprime cuanto cuesta en el recurso 2
-		printf("recurso2: %s",($inves_dat["recurso2"] * pow(2, $jugador_dat[$indice])));
-	echo '</p>';
-	echo '<p>';
-	//imprime cuanto tarda(falta añadir función que devuelva el tiempo en horas, minutos y segundos
-	echo 'Tiempo: ';
-	convierteseg($tiempo_total);
-	echo '</p>';
-	?>
-    
-    </div>
-    <?php
-	//esto es para que se salte los dos primeros campos que no son investigaciones)
-	$indice++;
-	}
-	?>
-</div>
-<?php
 }else if($_GET["control"] == "recursos"){
 ?>
 	<div id="principal">
@@ -609,625 +361,21 @@ setInterval("contador()",1000);
 </div>
 <?php
 }else if($_GET["control"] == "tropas"){
-?>
-<div id="principal">
-<!-- Script encargado de separar las tropas existentes de las nuevas -->
-<script>
-function cambio(numero){
-	switch (numero){
-		case 1:
-			document.getElementById("actuales").style.display = 'block';
-			document.getElementById("nuevas").style.display = 'none';
-			document.getElementById("requisitos").style.display = 'none';
-		break;	
-		case 2:
-			document.getElementById("actuales").style.display = 'none';
-			document.getElementById("nuevas").style.display = 'block';
-			document.getElementById("requisitos").style.display = 'none';
-		break;
-		case 3:
-			document.getElementById("actuales").style.display = 'none';
-			document.getElementById("nuevas").style.display = 'none';
-			document.getElementById("requisitos").style.display = 'block';
-		break;
-	}
-}
-</script>
-<div id="cambio">
-<table width="418">
-<tr>
-<td width="147"><a onclick="cambio(1)" href="#">Tropas en el Planeta</a></td>
-<td width="113"><a onclick="cambio(2)" href="#">Construir Tropas</a></td>
-<td width="102"><a onclick="cambio(3)" href="#">Requisitos</a></td>
-</tr>
-</table>
-</div>
-<div id="actuales" >
-<?php
-//selecciona todas las tropas en el planeta y las muestra(falta filtrar solo las del dueño del planeta)
-$query_tropas = mysql_query('SELECT * FROM existencias_tropas WHERE planetaactual=\''.$_SESSION["planeta"].'\' AND dueño=\''.$_SESSION["nick"].'\'') or die (mysql_error());
-$datos_tropas = mysql_fetch_array($query_tropas);
-//si no hay tropas muestra un mensaje, si las hay las muestra
-if(empty($datos_tropas)){
-	echo "<p>No tienes tropas en este planeta</p>";
-}else{
-$columnas = array_keys($datos_tropas);
-$query_tropas_actuales = mysql_query('SELECT ataque, defensa, escudo, carga, autodestruccion, atraviesa_escudos, camuflaje, atraviesa_stargate FROM unidades WHERE tipo=\'tierra\'');
-$tropas_actuales = mysql_fetch_array($query_tropas_actuales);
-	for($i = 0;$i < mysql_num_fields($query_tropas);$i++){
-		if($i >= 3){
-			if ($datos_tropas[$i] != NULL){
-				echo '<div id="trop">';
-				echo " ".$columnas[($i*2)+1].":";
-				echo " ".$datos_tropas[$i];
-				echo '</div>';
-			}
-		}
-	}
-}
-?>
-</div>
-<div id="nuevas">
-<script>
-function justNumbers(e) {
-var keynum = window.event ? window.event.keyCode : e.which;
-if ( keynum == 8 ) return true;
-return /\d/.test(String.fromCharCode(keynum));
-}
-</script>
-<?php
-$query_nuevas_tropas = mysql_query('SELECT nombre, descripcion, recurso1, recurso2, tiempo, inv1, inv2, inv3, inv4, inv5, inv6, inv7, inv8, inv9, inv10, inv11, inv12, inv13, ataque, defensa, escudo, carga, autodestruccion, atraviesa_escudos, camuflaje, atraviesa_stargate FROM unidades WHERE raza=\''.$_SESSION["raza"].'\' AND tipo=\'tierra\'') or die(mysql_error());
-$query_cons_pend = mysql_query('SELECT id, cantidad, horafinalizar, unidad FROM cons_pend WHERE jugador=\''.$_SESSION['nick'].'\' AND cancelado=\'0\' AND planeta=\''.$_SESSION["planeta"].'\' AND tipo=\'tropas\'')or die(mysql_error());
-$cons_pend = mysql_fetch_array($query_cons_pend);
 
-while($nuevas_tropas_dat = mysql_fetch_array($query_nuevas_tropas)){
-	if($nuevas_tropas_dat["inv1"]<= $jugador_dat["inv1"] && $nuevas_tropas_dat["inv2"]<= $jugador_dat["inv2"] && $nuevas_tropas_dat["inv3"]<= $jugador_dat["inv3"] && $nuevas_tropas_dat["inv4"]<= $jugador_dat["inv4"] && $nuevas_tropas_dat["inv5"]<= $jugador_dat["inv5"] && $nuevas_tropas_dat["inv6"]<= $jugador_dat["inv6"] && $nuevas_tropas_dat["inv7"]<= $jugador_dat["inv7"] && $nuevas_tropas_dat["inv8"]<= $jugador_dat["inv8"] && $nuevas_tropas_dat["inv9"]<= $jugador_dat["inv9"] && $nuevas_tropas_dat["inv10"]<= $jugador_dat["inv10"] && $nuevas_tropas_dat["inv11"]<= $jugador_dat["inv11"] && $nuevas_tropas_dat["inv12"]<= $jugador_dat["inv12"] && $nuevas_tropas_dat["inv13"]<= $jugador_dat["inv13"] ){
-		echo '<div id="trop">';
-		echo '<p>';
-		printf("%s",$nuevas_tropas_dat["nombre"]);
-		echo '</p>';
-		echo '<div id="botonmejora">';
-		if ($jugador_dat["recurso1"] >= $nuevas_tropas_dat["recurso1"] && $jugador_dat["recurso2"] >= $nuevas_tropas_dat["recurso2"] && empty($cons_pend[0])){
-			echo '<form action="juego-index.php?control=tropas" method="post" name="nuevas_tropas">';
-			echo '<p><input type="text" name="cantidad" onkeypress="return justNumbers(event);"></p>';
-			echo '<input type="hidden" name="recurso1" value="'.$nuevas_tropas_dat["recurso1"].'">';
-			echo '<input type="hidden" name="recurso2" value="'.$nuevas_tropas_dat["recurso2"].'">';
-			echo '<input type="hidden" name="tiempo" value="'.$nuevas_tropas_dat["tiempo"].'">';
-			echo '<input type="hidden" name="nombre" value="'.$nuevas_tropas_dat["nombre"].'">';
-			echo '<p><input type="submit" value="crear" name="crear_tropa"></p>';
-			echo '</form>';
-		}else if(!empty($cons_pend[0]) && $nuevas_tropas_dat["nombre"] == $cons_pend["unidad"]){
-			$tiempo_restante = $cons_pend["horafinalizar"] - time();
-			?>
-    			<script type="text/javascript" language="JavaScript"> 
-				var tiempo = <?php echo $tiempo_restante; ?>;
-				function contador(){
-					if(tiempo >= 86400){
-						var dias =  Math.floor(tiempo / 86400);
-						var horas = Math.floor(tiempo / 3600- (dias *24));
-						var minutos = tiempo/60 - (dias * 24 * 60);
-						var minutos = Math.floor(minutos);
-						var segundos = tiempo % 60;
-						if(dias > 1){
-							document.formulario.reloj.value=dias + " dias "+ horas + ":" +minutos +":"+ segundos;
-						}else{
-							document.formulario.reloj.value=dias + " dia "+ horas + ":" +minutos +":"+ segundos;
-						}
-		
-					}else if (tiempo >= 3600){
-						var horas = Math.floor(tiempo / 3600);
-						var minutos = tiempo/60 - (horas * 60);
-						var minutos = Math.floor(minutos);
-						var segundos = tiempo % 60;
-						document.formulario.reloj.value= horas + ":" +minutos +":"+ segundos;
-					}else if (tiempo >= 60){
-						var minutos = tiempo/60;
-						var minutos = Math.floor(minutos);
-						var segundos = tiempo % 60;
-						document.formulario.reloj.value= minutos +":"+ segundos;
-					}else if(tiempo < 60){
-						var segundos = tiempo;
-						document.formulario.reloj.value= segundos;
-					}
-					tiempo--;
-	  				if (tiempo < 0){
-						location.reload();
-					}
-				}
-				window.onload = contador;
+	include("include/tropas.php");
 
-				setInterval("contador()",1000);  
-				</script> 
-    		<?php
-			printf("%s", $cons_pend["cantidad"]);
-			echo '<form name="formulario"><input type="text" name="reloj" value="" size="25" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form>';
-			echo '<form action="juego-index.php?control=tropas" method="post">';
-			echo '<input type="submit" value="Cancelar" name="cancelar_tropas">';
-			echo '</form>';
-			
-		}else if ($jugador_dat["recurso1"] >= $nuevas_tropas_dat["recurso1"] && $jugador_dat["recurso2"] >= $nuevas_tropas_dat["recurso2"]){
-			echo '<p>Ya tienes una construcción en curso</p>';
-		}else{
-			echo '<p>No tienes recursos suficientes</p>';
-		}
-	   	echo '</div>';
-		echo '<p>';
-		printf("%s",$nuevas_tropas_dat["descripcion"]);
-		echo '</p>';
-		echo '<p>';
-		printf("recurso1: %s",$nuevas_tropas_dat["recurso1"]);
-		echo '</p>';
-		echo '<p>';
-		printf("recurso2: %s",$nuevas_tropas_dat["recurso2"]);
-		echo '</p>';
-		echo '<p>';
-		echo 'Tiempo: ';
-		convierteseg($nuevas_tropas_dat["tiempo"]);
-		echo '</p>';
-		echo '</div>';
-	}
-}
-?>
-</div>
-<div id="requisitos">
-<?php
-$query_nuevas_tropas = mysql_query('SELECT nombre, descripcion, recurso1, recurso2, tiempo, inv1, inv2, inv3, inv4, inv5, inv6, inv7, inv8, inv9, inv10, inv11, inv12, inv13, ataque, defensa, escudo, carga, autodestruccion, atraviesa_escudos, camuflaje, atraviesa_stargate FROM unidades WHERE raza=\''.$_SESSION["raza"].'\' AND tipo=\'tierra\'') or die(mysql_error());
-$query_inves_raza = mysql_query('SELECT nombre, numero FROM investigaciones WHERE raza=\''.$_SESSION["raza"].'\'') or die(mysql_error());
-
-$array_nombres_inves = array();
-while ($inves_raza = mysql_fetch_array($query_inves_raza)){
-	$array_nombres_inves[$inves_raza["numero"]] = $inves_raza["nombre"];
-}
-while($nuevas_tropas_dat = mysql_fetch_array($query_nuevas_tropas)){
-	echo '<div id="trop">';
-	echo '<div id="botonmejora">';
-	for($i = 1; $i <= 13;$i++){
-		if ($nuevas_tropas_dat["inv".$i] > 0){
-			if($jugador_dat["inv".$i] >= $nuevas_tropas_dat["inv".$i]){
-				echo '<div id="requcumplido">';
-			}else {
-				echo '<div id="requnocumplido">';
-			}
-			echo $array_nombres_inves[$i].'&nbsp; &nbsp;&nbsp;&nbsp;';
-			echo $nuevas_tropas_dat["inv".$i];
-			echo '</div>';
-		}
-	}
-	echo '</div>';
-	echo '<p>';
-	printf("%s",$nuevas_tropas_dat["nombre"]);
-	echo '<p>';
-	echo '</div>';
-}
-?>
-</div>
-</div>
-<?php
 }else if($_GET["control"] == "naves"){
-?>
-	<div id="principal">
-<!-- Script encargado de separar las tropas existentes de las nuevas -->
-<script>
-function cambio(numero){
-	switch (numero){
-		case 1:
-			document.getElementById("actuales").style.display = 'block';
-			document.getElementById("nuevas").style.display = 'none';
-			document.getElementById("requisitos").style.display = 'none';
-		break;	
-		case 2:
-			document.getElementById("actuales").style.display = 'none';
-			document.getElementById("nuevas").style.display = 'block';
-			document.getElementById("requisitos").style.display = 'none';
-		break;
-		case 3:
-			document.getElementById("actuales").style.display = 'none';
-			document.getElementById("nuevas").style.display = 'none';
-			document.getElementById("requisitos").style.display = 'block';
-		break;
-	}
-}
-</script>
-<div id="cambio">
-<table width="402">
-<tr>
-<td><a onclick="cambio(1)" href="#">Naves en el Planeta</a></td>
-<td><a onclick="cambio(2)" href="#">Construir Naves</a></td>
-<td><a onclick="cambio(3)" href="#">Requisitos</a></td>
-</tr>
-</table>
-</div>
-<div id="actuales" >
-<?php
-$query_naves = mysql_query('SELECT * FROM existencias_naves WHERE planetaactual=\''.$_SESSION["planeta"].'\'') or die (mysql_error());
-$datos_naves = mysql_fetch_array($query_naves);
-if(empty($datos_naves)){
-	echo "<p>No tienes naves en este planeta</p>";
-}else{
-$columnas = array_keys($datos_naves);
-$query_naves_actuales = mysql_query('SELECT ataque, defensa, escudo, carga, autodestruccion, atraviesa_escudos, camuflaje, atraviesa_stargate FROM unidades WHERE tipo=\'caza\' OR tipo=\'crucero\' OR tipo=\'nodriza\'');
-$naves_actuales = mysql_fetch_array($query_naves_actuales);
-	for($i = 0;$i < mysql_num_fields($query_naves);$i++){
-		if($i >= 3){
-			if ($datos_naves[$i] != NULL){
-				echo '<div id="trop">';
-				echo " ".$columnas[($i*2)+1].":";
-				echo " ".$datos_naves[$i];
-				echo '</div>';
-			}
-		}
-	}
-}
-?>
-</div>
-<div id="nuevas">
-<script>
-function justNumbers(e) {
-var keynum = window.event ? window.event.keyCode : e.which;
-if ( keynum == 8 ) return true;
-return /\d/.test(String.fromCharCode(keynum));
-}
-</script>
-<?php
-$query_nuevas_naves = mysql_query('SELECT nombre, descripcion, recurso1, recurso2, tiempo, inv1, inv2, inv3, inv4, inv5, inv6, inv7, inv8, inv9, inv10, inv11, inv12, inv13, ataque, defensa, escudo, carga, autodestruccion, atraviesa_escudos, camuflaje, atraviesa_stargate FROM unidades WHERE raza=\''.$_SESSION["raza"].'\' AND (tipo=\'caza\' OR tipo=\'crucero\' OR tipo=\'nodriza\')') or die(mysql_error());
-$query_cons_pend = mysql_query('SELECT id, cantidad, horafinalizar, unidad FROM cons_pend WHERE jugador=\''.$_SESSION['nick'].'\' AND cancelado=\'0\' AND planeta=\''.$_SESSION["planeta"].'\' AND tipo=\'naves\'')or die(mysql_error());
-$cons_pend = mysql_fetch_array($query_cons_pend);
 
+	include("include/naves.php");
 
-while($nuevas_naves_dat = mysql_fetch_array($query_nuevas_naves)){
-	if($nuevas_naves_dat["inv1"]<= $jugador_dat["inv1"] && $nuevas_naves_dat["inv2"]<= $jugador_dat["inv2"] && $nuevas_naves_dat["inv3"]<= $jugador_dat["inv3"] && $nuevas_naves_dat["inv4"]<= $jugador_dat["inv4"] && $nuevas_naves_dat["inv5"]<= $jugador_dat["inv5"] && $nuevas_naves_dat["inv6"]<= $jugador_dat["inv6"] && $nuevas_naves_dat["inv7"]<= $jugador_dat["inv7"] && $nuevas_naves_dat["inv8"]<= $jugador_dat["inv8"] && $nuevas_naves_dat["inv9"]<= $jugador_dat["inv9"] && $nuevas_naves_dat["inv10"]<= $jugador_dat["inv10"] && $nuevas_naves_dat["inv11"]<= $jugador_dat["inv11"] && $nuevas_naves_dat["inv12"]<= $jugador_dat["inv12"] && $nuevas_naves_dat["inv13"]<= $jugador_dat["inv13"] ){
-		echo '<div id="trop">';
-		echo '<p>';
-		printf("%s",$nuevas_naves_dat["nombre"]);
-		echo '</p>';
-		echo '<div id="botonmejora">';
-		if ($jugador_dat["recurso1"] >= $nuevas_naves_dat["recurso1"] && $jugador_dat["recurso2"] >= $nuevas_naves_dat["recurso2"] && empty($cons_pend[0])){
-			echo '<form action="juego-index.php?control=naves" method="post" name="nuevas_naves">';
-			echo '<p><input type="text" name="cantidad" onkeypress="return justNumbers(event);"></p>';
-			echo '<input type="hidden" name="recurso1" value="'.$nuevas_naves_dat["recurso1"].'">';
-			echo '<input type="hidden" name="recurso2" value="'.$nuevas_naves_dat["recurso2"].'">';
-			echo '<input type="hidden" name="tiempo" value="'.$nuevas_naves_dat["tiempo"].'">';
-			echo '<input type="hidden" name="nombre" value="'.$nuevas_naves_dat["nombre"].'">';
-			echo '<p><input type="submit" value="crear" name="crear_nave"></p>';
-			echo '</form>';
-		}else if(!empty($cons_pend[0]) && $nuevas_naves_dat["nombre"] == $cons_pend["unidad"]){
-			$tiempo_restante = $cons_pend["horafinalizar"] - time();
-			?>
-    			<script type="text/javascript" language="JavaScript"> 
-				var tiempo = <?php echo $tiempo_restante; ?>;
-				function contador(){
-					if(tiempo >= 86400){
-						var dias =  Math.floor(tiempo / 86400);
-						var horas = Math.floor(tiempo / 3600- (dias *24));
-						var minutos = tiempo/60 - (dias * 24 * 60);
-						var minutos = Math.floor(minutos);
-						var segundos = tiempo % 60;
-						if(dias > 1){
-							document.formulario.reloj.value=dias + " dias "+ horas + ":" +minutos +":"+ segundos;
-						}else{
-							document.formulario.reloj.value=dias + " dia "+ horas + ":" +minutos +":"+ segundos;
-						}
-		
-					}else if (tiempo >= 3600){
-						var horas = Math.floor(tiempo / 3600);
-						var minutos = tiempo/60 - (horas * 60);
-						var minutos = Math.floor(minutos);
-						var segundos = tiempo % 60;
-						document.formulario.reloj.value= horas + ":" +minutos +":"+ segundos;
-					}else if (tiempo >= 60){
-						var minutos = tiempo/60;
-						var minutos = Math.floor(minutos);
-						var segundos = tiempo % 60;
-						document.formulario.reloj.value= minutos +":"+ segundos;
-					}else if(tiempo < 60){
-						var segundos = tiempo;
-						document.formulario.reloj.value= segundos;
-					}
-					tiempo--;
-	  				if (tiempo < 0){
-						location.reload();
-					}
-				}
-				window.onload = contador;
-
-				setInterval("contador()",1000);  
-				</script> 
-    		<?php
-			printf("%s", $cons_pend["cantidad"]);
-			echo '<form name="formulario"><input type="text" name="reloj" value="" size="25" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form>';
-			echo '<form action="juego-index.php?control=naves" method="post">';
-			echo '<input type="submit" value="Cancelar" name="cancelar_naves">';
-			echo '</form>';
-			
-		}else if ($jugador_dat["recurso1"] >= $nuevas_naves_dat["recurso1"] && $jugador_dat["recurso2"] >= $nuevas_naves_dat["recurso2"]){
-			echo '<p>Ya tienes una construcción en curso</p>';
-		}else{
-			echo '<p>No tienes recursos suficientes</p>';
-		}
-	   	echo '</div>';
-		echo '<p>';
-		printf("%s",$nuevas_naves_dat["descripcion"]);
-		echo '</p>';
-		echo '<p>';
-		printf("recurso1: %s",$nuevas_naves_dat["recurso1"]);
-		echo '</p>';
-		echo '<p>';
-		printf("recurso2: %s",$nuevas_naves_dat["recurso2"]);
-		echo '</p>';
-		echo '<p>';
-		echo 'Tiempo: ';
-		convierteseg($nuevas_naves_dat["tiempo"]);
-		echo '</p>';
-		echo '</div>';
-	}
-}
-?>
-</div>
-<div id="requisitos">
-<?php
-$query_nuevas_naves = mysql_query('SELECT nombre, descripcion, recurso1, recurso2, tiempo, inv1, inv2, inv3, inv4, inv5, inv6, inv7, inv8, inv9, inv10, inv11, inv12, inv13, ataque, defensa, escudo, carga, autodestruccion, atraviesa_escudos, camuflaje, atraviesa_stargate FROM unidades WHERE raza=\''.$_SESSION["raza"].'\' AND (tipo=\'caza\' OR tipo=\'crucero\' OR tipo=\'nodriza\')') or die(mysql_error());
-$query_inves_raza = mysql_query('SELECT nombre, numero FROM investigaciones WHERE raza=\''.$_SESSION["raza"].'\'') or die(mysql_error());
-
-$array_nombres_inves = array();
-while ($inves_raza = mysql_fetch_array($query_inves_raza)){
-	$array_nombres_inves[$inves_raza["numero"]] = $inves_raza["nombre"];
-}
-while($nuevas_naves_dat = mysql_fetch_array($query_nuevas_naves)){
-	echo '<div id="trop">';
-	echo '<div id="botonmejora">';
-	for($i = 1; $i <= 13;$i++){
-		if ($nuevas_naves_dat["inv".$i] > 0){
-			if($jugador_dat["inv".$i] >= $nuevas_naves_dat["inv".$i]){
-				echo '<div id="requcumplido">';
-			}else {
-				echo '<div id="requnocumplido">';
-			}
-			echo $array_nombres_inves[$i].'&nbsp; &nbsp;&nbsp;&nbsp;';
-			echo $nuevas_naves_dat["inv".$i];
-			echo '</div>';
-		}
-	}
-	echo '</div>';
-	echo '<p>';
-	printf("%s",$nuevas_naves_dat["nombre"]);
-	echo '<p>';
-	echo '</div>';
-}
-?>
-</div>
-</div>
-<?php
 }else if($_GET["control"] == "defensas"){
-?>
-	<div id="principal">
-<!-- Script encargado de separar las tropas existentes de las nuevas -->
-<script>
-function cambio(numero){
-	switch (numero){
-		case 1:
-			document.getElementById("actuales").style.display = 'block';
-			document.getElementById("nuevas").style.display = 'none';
-			document.getElementById("requisitos").style.display = 'none';
-		break;	
-		case 2:
-			document.getElementById("actuales").style.display = 'none';
-			document.getElementById("nuevas").style.display = 'block';
-			document.getElementById("requisitos").style.display = 'none';
-		break;
-		case 3:
-			document.getElementById("actuales").style.display = 'none';
-			document.getElementById("nuevas").style.display = 'none';
-			document.getElementById("requisitos").style.display = 'block';
-		break;
-	}
-}
-</script>
-<div id="cambio">
-<table width="433">
-<tr>
-<td width="169" height="40"><a onclick="cambio(1)" href="#">Defensas en el Planeta</a></td>
-<td width="140"><a onclick="cambio(2)" href="#">Construir Defensas</a></td>
-<td width="108"><a onclick="cambio(3)" href="#">Requisitos</a></td>
-</tr>
-</table>
-</div>
-<div id="actuales" >
-<?php
-$query_defensas = mysql_query('SELECT * FROM existencias_defensas WHERE planetaactual=\''.$_SESSION["planeta"].'\'') or die (mysql_error());
-$datos_defensas = mysql_fetch_array($query_defensas);
-if(empty($datos_defensas)){
-	echo "<p>No tienes defensas en este planeta</p>";
-}else{
-$columnas = array_keys($datos_defensas);
-$query_defensas_actuales = mysql_query('SELECT ataque, defensa, escudo, carga, autodestruccion, atraviesa_escudos, camuflaje, atraviesa_stargate FROM unidades WHERE tipo=\'defensa\' OR tipo=\'satelite_defensa\' OR tipo=\'defensa_aerea\'');
-$defensas_actuales = mysql_fetch_array($query_defensas_actuales);
-	for($i = 0;$i < mysql_num_fields($query_defensas);$i++){
-		if($i >= 3){
-			if ($datos_defensas[$i] != NULL){
-				echo '<div id="trop">';
-				echo " ".$columnas[($i*2)+1].":";
-				echo " ".$datos_defensas[$i];
-				echo '</div>';
-			}
-		}
-	}
-}
-?>
-</div>
-<div id="nuevas">
-<script>
-function justNumbers(e) {
-var keynum = window.event ? window.event.keyCode : e.which;
-if ( keynum == 8 ) return true;
-return /\d/.test(String.fromCharCode(keynum));
-}
-</script>
-<?php
-$query_nuevas_defensas = mysql_query('SELECT nombre, descripcion, recurso1, recurso2, tiempo, inv1, inv2, inv3, inv4, inv5, inv6, inv7, inv8, inv9, inv10, inv11, inv12, inv13, ataque, defensa, escudo, carga, autodestruccion, atraviesa_escudos, camuflaje, atraviesa_stargate FROM unidades WHERE raza=\''.$_SESSION["raza"].'\' AND (tipo=\'defensa\' OR tipo=\'satelite_defensa\' OR tipo=\'defensa_aerea\')') or die(mysql_error());
-$query_cons_pend = mysql_query('SELECT id, cantidad, horafinalizar, unidad FROM cons_pend WHERE jugador=\''.$_SESSION['nick'].'\' AND cancelado=\'0\' AND planeta=\''.$_SESSION["planeta"].'\' AND tipo=\'defensas\'')or die(mysql_error());
-$cons_pend = mysql_fetch_array($query_cons_pend);
-
-while($nuevas_defensas_dat = mysql_fetch_array($query_nuevas_defensas)){
-	if($nuevas_defensas_dat["inv1"]<= $jugador_dat["inv1"] && $nuevas_defensas_dat["inv2"]<= $jugador_dat["inv2"] && $nuevas_defensas_dat["inv3"]<= $jugador_dat["inv3"] && $nuevas_defensas_dat["inv4"]<= $jugador_dat["inv4"] && $nuevas_defensas_dat["inv5"]<= $jugador_dat["inv5"] && $nuevas_defensas_dat["inv6"]<= $jugador_dat["inv6"] && $nuevas_defensas_dat["inv7"]<= $jugador_dat["inv7"] && $nuevas_defensas_dat["inv8"]<= $jugador_dat["inv8"] && $nuevas_defensas_dat["inv9"]<= $jugador_dat["inv9"] && $nuevas_defensas_dat["inv10"]<= $jugador_dat["inv10"] && $nuevas_defensas_dat["inv11"]<= $jugador_dat["inv11"] && $nuevas_defensas_dat["inv12"]<= $jugador_dat["inv12"] && $nuevas_defensas_dat["inv13"]<= $jugador_dat["inv13"] ){
-		echo '<div id="trop">';
-		echo '<p>';
-		printf("%s",$nuevas_defensas_dat["nombre"]);
-		echo '</p>';
-		echo '<div id="botonmejora">';
-		if ($jugador_dat["recurso1"] >= $nuevas_defensas_dat["recurso1"] && $jugador_dat["recurso2"] >= $nuevas_defensas_dat["recurso2"] && empty($cons_pend[0])){
-		echo '<form action="juego-index.php?control=defensas" method="post" name="nuevas_defensas">';
-		echo '<p><input type="text" name="cantidad" onkeypress="return justNumbers(event);"></p>';
-		echo '<input type="hidden" name="recurso1" value="'.$nuevas_defensas_dat["recurso1"].'">';
-		echo '<input type="hidden" name="recurso2" value="'.$nuevas_defensas_dat["recurso2"].'">';
-		echo '<input type="hidden" name="tiempo" value="'.$nuevas_defensas_dat["tiempo"].'">';
-		echo '<input type="hidden" name="nombre" value="'.$nuevas_defensas_dat["nombre"].'">';
-		echo '<p><input type="submit" value="crear" name="crear_defensa"></p>';
-		echo '</form>';
-		}else if(!empty($cons_pend[0]) && $nuevas_defensas_dat["nombre"] == $cons_pend["unidad"]){
-			$tiempo_restante = $cons_pend["horafinalizar"] - time();
-			?>
-    			<script type="text/javascript" language="JavaScript"> 
-				var tiempo = <?php echo $tiempo_restante; ?>;
-				function contador(){
-					if(tiempo >= 86400){
-						var dias =  Math.floor(tiempo / 86400);
-						var horas = Math.floor(tiempo / 3600- (dias *24));
-						var minutos = tiempo/60 - (dias * 24 * 60);
-						var minutos = Math.floor(minutos);
-						var segundos = tiempo % 60;
-						if(dias > 1){
-							document.formulario.reloj.value=dias + " dias "+ horas + ":" +minutos +":"+ segundos;
-						}else{
-							document.formulario.reloj.value=dias + " dia "+ horas + ":" +minutos +":"+ segundos;
-						}
-		
-					}else if (tiempo >= 3600){
-						var horas = Math.floor(tiempo / 3600);
-						var minutos = tiempo/60 - (horas * 60);
-						var minutos = Math.floor(minutos);
-						var segundos = tiempo % 60;
-						document.formulario.reloj.value= horas + ":" +minutos +":"+ segundos;
-					}else if (tiempo >= 60){
-						var minutos = tiempo/60;
-						var minutos = Math.floor(minutos);
-						var segundos = tiempo % 60;
-						document.formulario.reloj.value= minutos +":"+ segundos;
-					}else if(tiempo < 60){
-						var segundos = tiempo;
-						document.formulario.reloj.value= segundos;
-					}
-					tiempo--;
-	  				if (tiempo < 0){
-						location.reload();
-					}
-				}
-				window.onload = contador;
-
-				setInterval("contador()",1000);  
-				</script> 
-    		<?php
-			printf("%s", $cons_pend["cantidad"]);
-			echo '<form name="formulario"><input type="text" name="reloj" value="" size="25" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form>';
-			echo '<form action="juego-index.php?control=defensas" method="post">';
-			echo '<input type="submit" value="Cancelar" name="cancelar_defensas">';
-			echo '</form>';
-			
-		}else if ($jugador_dat["recurso1"] >= $nuevas_defensas_dat["recurso1"] && $jugador_dat["recurso2"] >= $nuevas_defensas_dat["recurso2"]){
-			echo '<p>Ya tienes una construcción en curso</p>';
-		}else{
-			echo '<p>No tienes recursos suficientes</p>';
-		}
-	   	echo '</div>';
-		echo '<p>';
-		printf("%s",$nuevas_defensas_dat["descripcion"]);
-		echo '</p>';
-		echo '<p>';
-		printf("recurso1: %s",$nuevas_defensas_dat["recurso1"]);
-		echo '</p>';
-		echo '<p>';
-		printf("recurso2: %s",$nuevas_defensas_dat["recurso2"]);
-		echo '</p>';
-		echo '<p>';
-		echo 'Tiempo: ';
-		convierteseg($nuevas_defensas_dat["tiempo"]);
-		echo '</p>';
-		echo '</div>';
-	}
-}
-?>
-</div>
-<div id="requisitos">
-<?php
-$query_nuevas_defensas = mysql_query('SELECT nombre, descripcion, recurso1, recurso2, tiempo, inv1, inv2, inv3, inv4, inv5, inv6, inv7, inv8, inv9, inv10, inv11, inv12, inv13, ataque, defensa, escudo, carga, autodestruccion, atraviesa_escudos, camuflaje, atraviesa_stargate FROM unidades WHERE raza=\''.$_SESSION["raza"].'\' AND (tipo=\'defensa\' OR tipo=\'satelite_defensa\' OR tipo=\'defensa_aerea\')') or die(mysql_error());
-$query_inves_raza = mysql_query('SELECT nombre, numero FROM investigaciones WHERE raza=\''.$_SESSION["raza"].'\'') or die(mysql_error());
-
-$array_nombres_inves = array();
-while ($inves_raza = mysql_fetch_array($query_inves_raza)){
-	$array_nombres_inves[$inves_raza["numero"]] = $inves_raza["nombre"];
-}
-while($nuevas_defensas_dat = mysql_fetch_array($query_nuevas_defensas)){
-	echo '<div id="trop">';
-	echo '<div id="botonmejora">';
-	for($i = 1; $i <= 13;$i++){
-		if ($nuevas_defensas_dat["inv".$i] > 0){
-			if($jugador_dat["inv".$i] >= $nuevas_defensas_dat["inv".$i]){
-				echo '<div id="requcumplido">';
-			}else {
-				echo '<div id="requnocumplido">';
-			}
-			echo $array_nombres_inves[$i].'&nbsp; &nbsp;&nbsp;&nbsp;';
-			echo $nuevas_defensas_dat["inv".$i];
-			echo '</div>';
-		}
-	}
-	echo '</div>';
-	echo '<p>';
-	printf("%s",$nuevas_defensas_dat["nombre"]);
-	echo '<p>';
-	echo '</div>';
-}
-?>
-</div>
-</div>
-<?php
+	
+	include("include/defensas.php");
+	
 }else if($_GET["control"] == "galaxia"){
-	$query_galaxia_actual = mysql_query('SELECT galaxia, sector, cuadrante FROM mapa WHERE id = \''.$_SESSION["planeta"].'\'') or die(mysql_error());
-	$galaxia_actual = mysql_fetch_array($query_galaxia_actual);
-	$query_lista_galaxias = mysql_query('SELECT galaxia FROM mapa_estructura') or die(mysql_error());
-	$query_datos_galaxia = mysql_query('SELECT sectores, cuadrantes, posiciones FROM mapa_estructura WHERE galaxia =\''.$galaxia_actual["galaxia"].'\'') or die(mysql_error());
-	$datos_galaxia = mysql_fetch_array($query_datos_galaxia);
-?>
-	<div id="principal">
-    <form action="juego-index.php?control=galaxia" method="post" name="selec_galaxia">
-    <table>
-    <tr>
-    <td>Galaxia:<select name="galaxia" onchange="document.selec_galaxia.submit();">
-    <?php 
-	while($lista_galaxias = mysql_fetch_array($query_lista_galaxias)){
-		echo '<option>'.$lista_galaxias["galaxia"].'</option>';
-	}
-	?>
-    </select></td>
-    <td>Sector:<select name="sector" onchange="document.selec_galaxia.submit();">
-    <?php 
-	for($i= 1; $i <= $datos_galaxia["sectores"];$i++){
-		echo '<option>'.$i.'</option>';
-	}
-	?>
-    </select></td>
-    <td>Cuadrante:<select name="cuadrante" onchange="document.selec_galaxia.submit();">
-    <?php 
-	for($i= 1; $i <= $datos_galaxia["cuadrantes"];$i++){
-		echo '<option>'.$i.'</option>';
-	}
-	?>
-    </select></td>
-    </tr>
-    </table>
-    </form>
-<p>galaxia.</p>
-</div>
-<?php
+	
+	include("include/galaxia.php");
+	
 }else if($_GET["control"] == "alianza"){
 ?>
 	<div id="principal">
@@ -1235,85 +383,8 @@ while($nuevas_defensas_dat = mysql_fetch_array($query_nuevas_defensas)){
 </div>
 <?php
 }else if($_GET["control"] == "mensajes"){
-?>
-	<div id="principal">
-    <!-- Script encargado de separar los mensajes recibidos del apartado para enviar -->
-<script>
-function cambio(numero){
-	switch (numero){
-		case 1:
-			document.getElementById("listamensaje").style.display = 'block';
-			document.getElementById("nuevomensaje").style.display = 'none';
-		break;	
-		case 2:
-			document.getElementById("listamensaje").style.display = 'none';
-			document.getElementById("nuevomensaje").style.display = 'block';
-		break;
-	}
-}
-</script>
-    <div id="cambio">
-    <table width="347">
-		<tr>
-			<td width="167"><a onclick="cambio(1)" href="#">Mensajes Recibidos</a></td>
-			<td width="168"><a onclick="cambio(2)" href="#">Enviar Nuevos</a></td>
-		</tr>
-	</table>
-    </div>
-    <div id="listamensaje">
-    <table>
-    <tr>
-    <td>Asunto</td>
-    <td>Enviado Por</td>
-    <td>Hora</td>
-    </tr>
-    <?php
-	$query_mensajes = mysql_query('SELECT id, de, hora, asunto, leido FROM mensajes WHERE para = \''.$_SESSION["nick"].'\' ORDER BY id DESC') or die(mysql_error());
-	if (isset($pagina)){
-		$total = mysql_num_rows($query_mensajes);
-		$numamostrar = 15;
-		$numpaginas = ceil($total / $numamostrar);
-		$limitesuperior = $pagina * $numamostrar;
-		$limiteinferior = $limitesuperior - $numamostrar;
-	}else{
-		$pagina = 1;
-		$total = mysql_num_rows($query_mensajes);
-		$numamostrar = 15;
-		$numpaginas = ceil($total / $numamostrar);
-		$limitesuperior = $pagina * $numamostrar;
-		$limiteinferior = $limitesuperior - $numamostrar;
-		
-	}
-	$j = 0;
-	while($mensaje = mysql_fetch_array($query_mensajes)){
-		if(($j>=$limiteinferior) && ($j<$limitesuperior)){
-			?>
-<tr>
-
-<td><a href="juego-index.php?control=leer_mensaje&id=<?php echo $mensaje["id"] ?>"><?php echo $mensaje["asunto"];?></a></td>
-<td><a href="juego-index.php?control=leer_mensaje&id=<?php echo $mensaje["id"] ?>"><?php echo $mensaje["de"];?></a></td>
-<td><a href="juego-index.php?control=leer_mensaje&id=<?php echo $mensaje["id"] ?>"><?php echo $mensaje["hora"];?></a></td>
-
-</tr>
-<?php
-		}
-		$j++;
-	}
-	?>
-    </table>
-    </div>
-    <div id="nuevomensaje">
-    <form action="juego-index.php?control=mensajes" method="post" name="mensaje_nuevo">
-    <p>Para: <input type="text" name="destinatario" /></p>
-    <p>Asunto: <input type="text" name="asunto"/></p>
-    <p><textarea name="cuerpo"></textarea></p>
-    <input type="hidden" name="hora" value="<?php echo time();?>"/>
-    <input type="hidden" name="remitente" value="<?php echo $_SESSION["nick"]; ?>"/>
-    <p><input type="submit" name="enviar_mensaje" value="Enviar" /></p>
-    </form>
-    </div>
-	</div>
-    <?php
+	include("include/mensaje.php");
+	
 }else if($_GET["control"] == "leer_mensaje"){
 	$id = htmlentities($_GET["id"]);
 	$query_leer_mensaje = mysql_query('SELECT de, hora, asunto, mensaje FROM mensajes WHERE id=\''.$id.'\' AND para =\''.$_SESSION["nick"].'\'') or die(mysql_error());
@@ -1332,7 +403,9 @@ function cambio(numero){
     </tr>
     <tr>
     <td><?php echo $leer_mensajes["mensaje"]; ?></td>
-    
+    </tr>
+    <tr>
+    <td><a href="juego-index.php?control=mensajes&accion=responder&destinatario=<?php echo $leer_mensajes["de"]; ?>">Responder</a></td>
     </tr>
     </table>
 	</div>

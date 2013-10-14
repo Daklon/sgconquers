@@ -1,5 +1,5 @@
 <?php session_start(); 
-mysql_connect('LOCALHOST','USER','PASSWORD') or die ('Ha fallado la conexi&oacute;n:'.mysql_error());
+mysql_connect('localhost','USER','PASSWORD') or die ('Ha fallado la conexi&oacute;n:'.mysql_error());
 mysql_select_db('DATABASE') or die ('Error al seleccionar la base de datos.'.mysql_error());
 
 ?>
@@ -49,11 +49,12 @@ mysql_select_db('DATABASE') or die ('Error al seleccionar la base de datos.'.mys
 <p>Enlaces:</p>
 <p><a href="http://foro.sgconquers.hol.es">Foro</a></p>
 <p><a href="registro.php">Regístrate</a></p>
+<p><a href="bugs.alphasgcon.hol.es">Bugs</a></p>
 </div>
 
 <div id="principal">
 
-<p>SgConquers es un juego hecho por aficionados de la serie stargate, basado en dicha serie y sin ánimo de lucro. Actualmente se encuentra en una fase muy temprana de desarrollo y aún no es jugable, rogamos paciencia, en cuanto podamos publicaremos una beta pública. Mientras tanto puedes acceder a nuestro foro, registrarte y consultar cualquier duda, ver el progreso del juego o solicitar ser tester de la primera alpha cerrada que saldrá aproximadamente a la luz entre el 10 y el 24 de agosto.</p>
+<p>SgConquers es un juego hecho por aficionados de la serie stargate, basado en dicha serie y sin ánimo de lucro. Actualmente se encuentra en una fase muy temprana de desarrollo y aún no es jugable, rogamos paciencia, en cuanto podamos publicaremos una beta pública. Actualmente no dispongo de mucho tiempo por lo que el desarrollo del juego se verá ralentizado y no se cuando verá la luz</p>
 <div id="anunciorob">
 <p>Hueco para anuncios</p>
 </div>
