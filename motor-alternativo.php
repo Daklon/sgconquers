@@ -11,8 +11,8 @@ while(true){
 //comprueba si se ha perdido la conexión con la bd, en cuyo caso la reestablece
 if( !mysql_ping($conecta) ){
 	
-	$conecta = mysql_pconnect('localhost','sgcon','gool34') or die ('Ha fallado la conexi&oacute;n:'.mysql_error());
-	$seleciona_bd = mysql_select_db('sgcon') or die ('Error al seleccionar la base de datos.'.mysql_error());
+	$conecta = mysql_pconnect('localhost','USER','PASSWORD') or die ('Ha fallado la conexi&oacute;n:'.mysql_error());
+	$seleciona_bd = mysql_select_db('DATABASE') or die ('Error al seleccionar la base de datos.'.mysql_error());
 }
 $query_mov_pend = mysql_query('SELECT id, horallegada, cancelado FROM mov_pend ORDER BY horallegada ASC LIMIT 1')or die(mysql_error());
 $mov_pend = mysql_fetch_array($query_mov_pend);
