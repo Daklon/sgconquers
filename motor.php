@@ -12,7 +12,7 @@ echo 'inicio bucle/ ';
 if( !mysql_ping($conecta) ){
 	mysql_close($conecta);
 	$conecta = mysql_connect('localhost','USER','PASSWORD');
-	$seleciona_bd = mysql_select_db('USER');
+	$seleciona_bd = mysql_select_db('DATABASE');
 	 if( !mysql_ping($conecta) || !$seleciona_bd ){
 	 echo 'conexión perdida';
 	 sleep(5);
