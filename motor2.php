@@ -10,8 +10,8 @@ while(true){
 //comprueba si se ha perdido la conexión con la bd, en cuyo caso la reestablece
 if( !mysql_ping($conecta) ){
 	mysql_close($conecta);
-	$conecta = mysql_connect('localhost','sgcon','gool34');
-	$seleciona_bd = mysql_select_db('sgcon');
+	$conecta = mysql_connect('localhost','USER','PASSWORD');
+	$seleciona_bd = mysql_select_db('DATABASE');
 	 if( !mysql_ping($conecta) || !$seleciona_bd ){
 	 echo 'conexión perdida';
 	 sleep(5);
