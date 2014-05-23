@@ -4,8 +4,8 @@ error_reporting(E_ALL);
 ini_set('memory_limit', '64M');
 //conecta a db
 
-$conecta = mysql_connect('localhost','sgcon','gool34') or die ('Ha fallado la conexi&oacute;n:'.mysql_error());
-$seleciona_bd = mysql_select_db('sgcon') or die ('Error al seleccionar la base de datos.'.mysql_error());
+$conecta = mysql_connect('localhost','USER','PASSWORD') or die ('Ha fallado la conexi&oacute;n:'.mysql_error());
+$seleciona_bd = mysql_select_db('DATABASE') or die ('Error al seleccionar la base de datos.'.mysql_error());
 
 //consulta datos básicos(si cambian hay que reiniciar el motor para que surtan efecto)
 $universo = 0;
@@ -79,8 +79,8 @@ echo 'inicio bucle/ ';
 //comprueba si se ha perdido la conexión con la bd, en cuyo caso la reestablece
 if( !mysql_ping($conecta) ){
 	mysql_close($conecta);
-	$conecta = mysql_connect('localhost','sgcon','gool34');
-	$seleciona_bd = mysql_select_db('sgcon');
+	$conecta = mysql_connect('localhost','USER','PASSWORD');
+	$seleciona_bd = mysql_select_db('DATABASE');
 	 if( !mysql_ping($conecta) || !$seleciona_bd ){
 	 echo 'conexión perdida';
 	 sleep(5);
