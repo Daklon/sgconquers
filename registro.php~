@@ -28,8 +28,8 @@
 <div id="principal">
 <p>Puedes registrarte para participar en la primera alpha cerrada, además de efectuar el registro a través de este formulario, deberás registrarte en el foro y solicitar tu participación (si no lo has hecho ya), se te asignará un número y podrás jugar cuando te toque.
 <?php
-mysql_connect('localhost','USER','PASSWORD') or die ('Ha fallado la conexi&oacute;n:'.mysql_error());
-mysql_select_db('DATABASE') or die ('Error al seleccionar la base de datos.'.mysql_error());
+mysql_connect('localhost','sgcon','gool34') or die ('Ha fallado la conexi&oacute;n:'.mysql_error());
+mysql_select_db('sgcon') or die ('Error al seleccionar la base de datos.'.mysql_error());
 
 
 if (isset($_POST["nick"])) {
