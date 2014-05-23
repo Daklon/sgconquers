@@ -1,6 +1,6 @@
 <?php session_start(); 
-mysql_connect('localhost','USER','PASSWORD') or die ('Ha fallado la conexi&oacute;n:'.mysql_error());
-mysql_select_db('DATABASE') or die ('Error al seleccionar la base de datos.'.mysql_error());
+mysql_connect('localhost','sgcon','gool34') or die ('Ha fallado la conexi&oacute;n:'.mysql_error());
+mysql_select_db('sgcon') or die ('Error al seleccionar la base de datos.'.mysql_error());
 
 ?>
 
