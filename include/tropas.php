@@ -40,17 +40,26 @@ if(empty($datos_tropas)){
 	echo "<p>No tienes tropas en este planeta</p>";
 }else{
 	echo '<form action="juego-index.php" method="post">';
+	
+//Esto se usa para saber el nombre de la unidad en base a la consulta sql
 $columnas = array_keys($datos_tropas);
+//obtiene todas las tropas y sus caracteristicas para mostrarlas
 $query_tropas_actuales = mysql_query('SELECT ataque, defensa, escudo, carga, autodestruccion, atraviesa_escudos, camuflaje, atraviesa_stargate FROM unidades WHERE tipo=\'tierra\'');
 $tropas_actuales = mysql_fetch_array($query_tropas_actuales);
 $indice_tropas = 1;
+	//bucle encargado de imprimir todas las tropas y su cantidad que posee el jugador en ese planeta
 	for($i = 0;$i < mysql_num_fields($query_tropas);$i++){
 		if($i >= 3){
 			if ($datos_tropas[$i] != NULL){
 				echo '<div id="trop">';
+				//Imrime el nombre
 				echo " ".$columnas[($i*2)+1].":";
+				// imprime la cantidad
 				echo " ".$datos_tropas[$i];
+				//textbox que envia la cantidad de tropas que se desean enviar referenciadas por su nombre
 				echo '<input type="text" value="0" name="'.$columnas[($i*2)+1].'">';
+				//campo hidden que envia todos los nombres de las unidades a enviar(para poder sacar la cantidad de cada una al procesarla,
+				//usando como referencia un índice numérico que se incrementa desde el 1 para cada nombre de unidad
 				echo '<input type="hidden" name="'.$indice_tropas.'" value="'.$columnas[($i*2)+1].'">';
 				$indice_tropas++;
 				echo '</div>';
@@ -58,6 +67,44 @@ $indice_tropas = 1;
 		}
 	}
 	echo '<div id="trop">';
+	
+	//consultas sql para mostrar los cuadros de coordenadas
+	$query_lista_galaxias = mysql_query('SELECT galaxia FROM mapa_estructura') or die(mysql_error());
+	if (isset($_POST["galaxia"])) {
+		$query_datos_galaxia = mysql_query('SELECT sectores, cuadrantes, posiciones FROM mapa_estructura WHERE galaxia =\''.$_POST["galaxia"].'\'') or die(mysql_error());
+	}else{
+		$query_datos_galaxia = mysql_query('SELECT sectores, cuadrantes, posiciones FROM mapa_estructura WHERE galaxia =\''.$_SESSION["galaxia"].'\'') or die(mysql_error());
+	}
+	$datos_galaxia = mysql_fetch_array($query_datos_galaxia);
+	//tabla y código php que generan los selectbox para selecionar coordenadas
+	?>
+	<table>
+    <tr>
+    <td>Galaxia:<select name="galaxia">
+    <?php 
+	while($lista_galaxias = mysql_fetch_array($query_lista_galaxias)){
+		echo '<option>'.$lista_galaxias["galaxia"].'</option>';
+	}
+	?>
+    </select></td>
+    <td>Sector:
+    <input type="text" value="0" name="sector">
+    </td>
+    <td>Cuadrante:    
+    <input type="text" value="0" name="cuadrante">
+    </td>
+    <td>Posicion:    
+    <input type="text" value="0" name="posicion">
+    </td>
+    <td>Movimiento:<select name="movimiento">
+    <option>Desplegar</option>
+    <option>Explorar</option>
+    <option>Recolectar</option>
+    <option>Establecer Base</option>
+    </select></tr>
+    </table> 
+    <?php
+	//botones de enviar y licenciar tropas
 	echo '<input type="submit" name="enviar_tropas" value="Enviar Tropas">';
 	echo '<input type="submit" name="licenciar_tropas" value="Licenciar Tropas">';
 	echo '</div>';
@@ -160,7 +207,7 @@ while($nuevas_tropas_dat = mysql_fetch_array($query_nuevas_tropas)){
 		echo '</p>';
 		echo '<p>';
 		echo 'Tiempo: ';
-		convierteseg($nuevas_tropas_dat["tiempo"]);
+		convierteseg(($nuevas_tropas_dat["tiempo"] / $config["velocidad_construccion"] / 10));
 		echo '</p>';
 		echo '</div>';
 	}

@@ -43,7 +43,7 @@ function cambio(numero){
 	<div id="investigacion">
    	<?php
 	//calcula el tiempo de la investigación en cuestión
-	$tiempo_total = tiempoinves($inves_dat["tiempo"], $jugador_dat[$indice]);
+	$tiempo_total = tiempoinves($inves_dat["tiempo"], $jugador_dat[$indice], $config);
 	echo '<p>';
 	//imprime el nombre junto al nivel
 		printf("%s(%s)",$inves_dat["nombre"],$jugador_dat[$indice]);
@@ -125,7 +125,7 @@ setInterval("contador()",1000);
 		printf("recurso2: %s",($inves_dat["recurso2"] * pow(2, $jugador_dat[$indice])));
 	echo '</p>';
 	echo '<p>';
-	//imprime cuanto tarda(falta añadir función que devuelva el tiempo en horas, minutos y segundos
+	//imprime cuanto tarda
 	echo 'Tiempo: ';
 	convierteseg($tiempo_total);
 	echo '</p>';

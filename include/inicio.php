@@ -1,7 +1,137 @@
 <div id="principal">
-<p>Juego en fase pre-Alpha, aún no está ni de lejos listo para ser jugado, pero quiero ir haciendo pruebas para probar lo que tengo hecho, si todo va bien no debería haber ningún error. Los apartados que pueden probar son: Investigaciones, Tropas, Naves, Defensas y Mensajes, el resto aún no está listo</p>
+<p>Juego en fase Alpha, ya se pueden ir probando cosillas, en caso de que salga algún error(que van a salir, porque seguro que hay muchos), copienlo y pasenmelo. Los apartados que pueden probar son: Investigaciones, Tropas, Naves, Defensas, Galaxia, Mensajes, el resto aún no está listo. Se pueden hacer misiones sencillas como desplegar. A TESTEAR!!!!!</p>
 </div>
 <?php
+//genera caja mision si es necesario(una caja por mision)
+
+
+//funcion que genera una cadena para sql que consulta todos los ids de los planetas del jugador(para poder ver todas las misiones de los planetas del jugador)
+function id_planetas($planeta1, $planeta2, $planeta3, $planeta4, $planeta5){
+	$cadena = "";
+	$planeta = array();
+	$planeta[0] = $planeta1;
+	$planeta[1] = $planeta2;
+	$planeta[2] = $planeta3;
+	$planeta[3] = $planeta4;
+	$planeta[4] = $planeta5;
+	for($i=0; $i < 5; $i++){
+		if($planeta[$i] != NULL){
+			if($cadena == ""){
+				$cadena = "planetadestino=".$planeta[$i]."";
+			}else{
+				$cadena = $cadena. " OR planetadestino=".$planeta[$i];
+			}			
+		}
+	}
+	return $cadena;
+}
+
+//obtenemos una lista con los ids de los movimientos para procesarlos con otras cosnultas en base al id mas adelante
+$query_mov_pend = mysql_query('SELECT id FROM mov_pend WHERE jugador=\''.$_SESSION['nick'].'\' OR '.id_planetas($jugador_dat['planeta1'],$jugador_dat['planeta2'], $jugador_dat['planeta3'], $jugador_dat['planeta4'], $jugador_dat['planeta5']).'')or die(mysql_error());
+
+	
+	//generamos una caja con la consulta sql para cada uno de los ids obtenidos antes y sus datos asociados
+	$indice = 1;
+	while($mov_pend = mysql_fetch_row($query_mov_pend)){
+		$query_datos_mov = mysql_query('SELECT * FROM mov_pend WHERE id=\''.$mov_pend[0].'\' ') or die(mysql_error());
+		$datos_mov = mysql_fetch_array($query_datos_mov);
+		
+		//truco para obtener los nombres de las columnas
+		$columnas = array_keys($datos_mov);
+		//consultas sql para obtener nombre y coordenadas de los planetas
+		$query_coord_planetaactual = mysql_query('SELECT nombre FROM mapa WHERE id=\''.$datos_mov["planetaactual"].'\' ') or die(mysql_error());
+		$query_coord_planetadestino = mysql_query('SELECT nombre FROM mapa WHERE id=\''.$datos_mov["planetadestino"].'\' ') or die(mysql_error());
+		//empezamos a procesar los datos
+		$planetas_mov = array();
+		$temp = mysql_fetch_row($query_coord_planetaactual);
+		$planetas_mov[1] = $temp[0];
+		$temp = mysql_fetch_row($query_coord_planetadestino);
+		$planetas_mov[2] = $temp[0];
+			
+		if($datos_mov["horavuelta"] == NULL){
+			$tiempo_restante = $datos_mov["horallegada"] - time();
+		}else{
+			$tiempo_restante = $datos_mov["horavuelta"] - time();
+		}
+		if($datos_mov["tipo"] == 1){
+			$tipo = "Desplegar";
+		}elseif($datos_mov["tipo"] == 2){
+			$tipo = "Explorar";
+		}elseif($datos_mov["tipo"] == 3){
+			$tipo = "Recolectar";
+		}elseif($datos_mov["tipo"] == 4){
+			$tipo = "Establecer Base";
+		}
+		//este script simplemente genera contadores(para mostrar el tiempo restante ) para cada movimiento
+		?>
+    <script type="text/javascript" language="JavaScript"> 
+var tiempo_mov<?php echo $indice ?> = <?php echo $tiempo_restante; ?>;
+function contador_mov<?php echo $indice ?>(){
+	if(tiempo_mov<?php echo $indice ?> >= 86400){
+		var dias_mov<?php echo $indice ?> =  Math.floor(tiempo_mov<?php echo $indice ?> / 86400);
+		var horas_mov<?php echo $indice ?> = Math.floor(tiempo_mov<?php echo $indice ?> / 3600- (dias_mov<?php echo $indice ?> *24));
+		var minutos_mov<?php echo $indice ?> = tiempo_mov<?php echo $indice ?>/60 - (dias_mov<?php echo $indice ?> * 24 * 60);
+		var minutos_mov<?php echo $indice ?> = Math.floor(minutos_mov<?php echo $indice ?>);
+		var segundos_mov<?php echo $indice ?> = tiempo_mov<?php echo $indice ?> % 60;
+		if(dias_mov<?php echo $indice ?> > 1){
+			document.formulario_mov<?php echo $indice ?>.reloj.value=dias + " dias "+ horas_mov<?php echo $indice ?> + ":" +minutos_mov<?php echo $indice ?> +":"+ segundos_mov<?php echo $indice ?>;
+		}else{
+			document.formulario_mov<?php echo $indice ?>.reloj.value=dias + " dia "+ horas_mov<?php echo $indice ?> + ":" +minutos_mov<?php echo $indice ?> +":"+ segundos_mov<?php echo $indice ?>;
+		}
+		
+	}else if (tiempo_mov<?php echo $indice ?> >= 3600){
+		var horas_mov<?php echo $indice ?> = Math.floor(tiempo_mov<?php echo $indice ?> / 3600);
+		var minutos_mov<?php echo $indice ?> = tiempo_mov<?php echo $indice ?>/60 - (horas_mov<?php echo $indice ?> * 60);
+		var minutos_mov<?php echo $indice ?> = Math.floor(minutos_mov<?php echo $indice ?>);
+		var segundos_mov<?php echo $indice ?> = tiempo_mov<?php echo $indice ?> % 60;
+		document.formulario_mov<?php echo $indice ?>.reloj.value= horas_mov<?php echo $indice ?> + ":" +minutos_mov<?php echo $indice ?> +":"+ segundos_mov<?php echo $indice ?>;
+	}else if (tiempo_mov<?php echo $indice ?> >= 60){
+		var minutos_mov<?php echo $indice ?> = tiempo_mov<?php echo $indice ?>/60;
+		var minutos_mov<?php echo $indice ?> = Math.floor(minutos_mov<?php echo $indice ?>);
+		var segundos_mov<?php echo $indice ?> = tiempo_mov<?php echo $indice ?> % 60;
+		document.formulario_mov<?php echo $indice ?>.reloj.value= minutos_mov<?php echo $indice ?> +":"+ segundos_mov<?php echo $indice ?>;
+	}else if(tiempo_mov<?php echo $indice ?> < 60 && tiempo_mov<?php echo $indice ?> >= 0){
+		var segundos_mov<?php echo $indice ?> = tiempo_mov<?php echo $indice ?>;
+		document.formulario_mov<?php echo $indice ?>.reloj.value= segundos_mov<?php echo $indice ?>;
+	}
+	tiempo_mov<?php echo $indice ?>--;
+	if (tiempo_mov<?php echo $indice ?> == -1){
+		location.reload();
+	}
+}
+window.onload = contador_mov<?php echo $indice ?>;
+
+setInterval("contador_mov<?php echo $indice ?>()",1000);  
+</script> 
+    <?php
+		echo '<div id="principal">';
+		echo '<table><tr>';
+		echo '<td>'.$tipo.'</td>';
+		//imprime los nombres de los planetas en base a la consulta a la bd
+		echo '<td>'.$planetas_mov[1].' --> '.$planetas_mov[2].'</td>';
+		echo '<td><form name="formulario_mov'.$indice.'"><input type="text" name="reloj" value="" size="55" style="background-color:#006; color:#FFF; border : 0px ; text-align : center"></form> </td>';
+		if($datos_mov["cancelado"] == 0){
+			echo '<td><form action="juego-index.php?control=inicio" name="regresar_mov'.$indice.'" method="post"><input type="submit" name="cancelar_mov" value="Regresar"> <input type="hidden" name="id_mov" value="'.$mov_pend[0].'"> </form> </td>';
+		}
+		echo '</tr>';
+		$indice_tropas = 12;
+		while($columnas[($indice_tropas*2)+1] != NULL){
+			if($datos_mov[$indice_tropas] > 0){
+				echo "<tr><td>".$columnas[($indice_tropas*2)+1].": ".$datos_mov[$indice_tropas]."</td></tr>";
+			}
+			
+			$indice_tropas++;
+		}
+		echo '</table></div>';
+		$indice++;
+	}
+
+
+
+
+
+
+
 //genera caja investigación si es necesario
 $query_inves_pend = mysql_query('SELECT investigacion, nivelnuevo, horafinalizar FROM inves_pend WHERE jugador=\''.$_SESSION['nick'].'\' AND cancelado=\'0\'')or die(mysql_error());
 $inves_pend = mysql_fetch_array($query_inves_pend);

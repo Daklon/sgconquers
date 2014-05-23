@@ -149,7 +149,7 @@ while($nuevas_naves_dat = mysql_fetch_array($query_nuevas_naves)){
 		echo '</p>';
 		echo '<p>';
 		echo 'Tiempo: ';
-		convierteseg($nuevas_naves_dat["tiempo"]);
+		convierteseg(($nuevas_naves_dat["tiempo"]/ $config["velocidad_construccion"] / 10));
 		echo '</p>';
 		echo '</div>';
 	}
